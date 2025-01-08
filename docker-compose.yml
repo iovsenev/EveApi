@@ -1,0 +1,47 @@
+services:
+  eve.api:
+    image: ${DOCKER_REGISTRY-}eveapi
+    container_name: api
+    build:
+      context: .
+      dockerfile: Eve.Api/Dockerfile
+    ports:
+      - 5000:5000
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=5000
+      # - ASPNETCORE_HTTPS_PORTS=6001
+      - ConnectionStrings__Database=Host=eve.db;Port=5432;Database=eve;Username=postgres;Password=1234
+      - ConnectionStrings__AuthDatabase=Host=eve.db;Port=5432;Database=eve_auth;Username=postgres;Password=1234
+      - Admin__Name=vasya
+      - Admin__Password=ewQ_1234
+    depends_on:
+      - eve.db
+    volumes:
+      - shared-data:/app/evesde
+  eve.db:
+    image: postgres:latest
+    container_name: eve.db
+    environment:
+        - POSTGRES_DB=eve
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=1234
+    ports:
+      - 5432:5432
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+  redis:
+    image: redis:latest
+    container_name: eve.redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - shared-data:/data
+volumes:
+  shared-data: 
+    driver: local
+    driver_opts:
+        type: none
+        o: bind
+        device: "D:/volumes/eve_api"
+  postgres-data:  
