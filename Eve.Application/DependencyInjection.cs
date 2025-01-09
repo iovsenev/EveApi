@@ -2,8 +2,9 @@
 using Eve.Application.ExternalDataLoaders;
 using Eve.Application.Mapping;
 using Eve.Application.Services;
-using Eve.Application.Services.MarketGroups.GetChildTypes;
+using Eve.Application.Services.AuthServices;
 using Eve.Application.Services.Stations.GetStations;
+using Eve.Application.Services.Types.GetChildTypesForGroupId;
 using Eve.Application.StaticDataLoaders;
 using Eve.Application.StaticDataLoaders.Common;
 using Eve.Application.StaticDataLoaders.ConvertFromYaml.bsd;
@@ -11,6 +12,7 @@ using Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd;
 using Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd.Blueprints;
 using Eve.Application.StaticDataLoaders.ConvertFromYaml.Universe;
 using Eve.Domain.Interfaces.ApiServices;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -44,9 +46,10 @@ public static class DependencyInjection
 
         services.AddScoped<FileReader>();
 
-        services.AddRequestHandlers(typeof(GetChildTypesHandler));
+        services.AddRequestHandlers(typeof(GetChildTypesForMarketGroupIdHandler));
 
         services.AddScoped<IService<StationNameDto>, GetStationName>();
+        services.AddScoped<ITokenService, TokenService>();
     }
 
     private static IServiceCollection AddRequestHandlers(this IServiceCollection services, Type assemblyType)

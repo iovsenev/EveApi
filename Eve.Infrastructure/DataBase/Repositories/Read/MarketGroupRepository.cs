@@ -21,7 +21,7 @@ public class MarketGroupRepository : IMarketReadRepository
             .Where(t => t.MarketGroupId == id && t.Published == true)
             .Include(g => g.Icon)
             .ToListAsync();
-        Console.WriteLine(types.Count);
+
         if (!types.Any()) return Error.NotFound($"The child types not found for group id: ");
 
         return types;
@@ -29,13 +29,13 @@ public class MarketGroupRepository : IMarketReadRepository
 
     public async Task<Result<MarketGroupEntity>> GetByIdAsync(int id, CancellationToken token)
     {
-        var type = await _context.MarketGroups
+        var marketGroup = await _context.MarketGroups
             .AsNoTracking()
             .Include(g => g.Icon)
             .FirstOrDefaultAsync(g => g.Id == id);
 
-        return type is not null 
-            ? type 
+        return marketGroup is not null 
+            ? marketGroup 
             : Error.NotFound($"Group with id: {id} is not found");
 
     }

@@ -8,19 +8,20 @@ using Eve.Domain.Interfaces.DataBaseAccess.Read;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
-namespace Eve.Application.Services.MarketGroups.GetChildTypes;
-public class GetChildTypesHandler : IRequestHandler<GetChildTypesResponse, GetChildTypesRequest>
+namespace Eve.Application.Services.Types.GetChildTypesForGroupId;
+
+public class GetChildTypesIsProductForGroupIdHandler : IRequestHandler<GetChildTypesProductResponse, GetChildTypesRequest>
 {
-    private readonly IMarketReadRepository _repos;
+    private readonly IReadCategoryRepository _repos;
     private readonly IMapper _mapper;
     private readonly IRedisProvider _redisCache;
-    private readonly ILogger<GetChildTypesHandler> _logger;
+    private readonly ILogger<GetChildTypesForMarketGroupIdHandler> _logger;
 
-    public GetChildTypesHandler(
-        IMarketReadRepository repos,
+    public GetChildTypesIsProductForGroupIdHandler(
+        IReadCategoryRepository repos,
         IMapper mapper,
         IRedisProvider redisCache,
-        ILogger<GetChildTypesHandler> logger)
+        ILogger<GetChildTypesForMarketGroupIdHandler> logger)
     {
         _repos = repos;
         _mapper = mapper;
@@ -28,14 +29,14 @@ public class GetChildTypesHandler : IRequestHandler<GetChildTypesResponse, GetCh
         _logger = logger;
     }
 
-    public async Task<Result<GetChildTypesResponse>> Handle(GetChildTypesRequest request, CancellationToken token)
+    public async Task<Result<GetChildTypesProductResponse>> Handle(GetChildTypesRequest request, CancellationToken token)
     {
         var groupId = request.GroupId;
         var key = $"{GlobalKeysCacheConstants.MarketGroupTypes}:{groupId}";
 
         var result = await _redisCache.GetOrSetAsync(
             key,
-            () => _repos.GetChildTypesAsync(groupId, token),
+            () => _repos.GetTypeIsProductForGroupId(groupId, token),
             new DistributedCacheEntryOptions
             {
                 AbsoluteExpiration = DateTimeOffset.UtcNow.AddDays(1)
@@ -48,6 +49,6 @@ public class GetChildTypesHandler : IRequestHandler<GetChildTypesResponse, GetCh
             .Select(t => _mapper.Map<ShortTypeDto>(t))
             .ToList();
 
-        return new GetChildTypesResponse( types);
+        return new GetChildTypesProductResponse(types);
     }
 }

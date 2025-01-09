@@ -1,9 +1,9 @@
 ﻿using Eve.Api.Controllers.Common;
 using Eve.Application.Services;
-using Eve.Application.Services.MarketGroups.GetChildTypes;
 using Eve.Application.Services.MarketGroups.GetMarketGroups;
 using Eve.Application.Services.MarketGroups.GetMarketHistory;
 using Eve.Application.Services.MarketGroups.GetOrders;
+using Eve.Application.Services.Types.GetChildTypesForGroupId;
 using Eve.Domain.Constants;
 using Microsoft.AspNetCore.Mvc;
 

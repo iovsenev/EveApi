@@ -26,6 +26,7 @@ public static class DependencyInjection
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
         services.AddScoped<ICategoryRepository, CategoryRepository>();
+        services.AddScoped<IReadCategoryRepository, ReadCategoryRepository>();
         services.AddScoped<ILoadRepository, LoadRepository>();
         services.AddScoped<IMarketReadRepository, MarketGroupRepository>();
         services.AddScoped<ITypeReadRepository, TypeRepository>();
@@ -54,6 +55,7 @@ public static class DependencyInjection
 
         return services;
     }
+
 
     private static IServiceCollection AddProviders(this IServiceCollection services)
     {

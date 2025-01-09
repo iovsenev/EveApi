@@ -1,23 +1,22 @@
 ﻿using Eve.Api.Controllers.Common;
+using Eve.Application.Services.AuthServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
 
 namespace Eve.Api.Controllers;
 
 public class AuthController : BaseController
 {
     private readonly UserManager<IdentityUser> _userManager;
-    private readonly IConfiguration _config;
+    private readonly ITokenService _tokenService;
 
-    public AuthController(UserManager<IdentityUser> userManager, IConfiguration config)
+    public AuthController(
+        UserManager<IdentityUser> userManager, 
+        ITokenService tokenService)
     {
         _userManager = userManager;
-        _config = config;
+        _tokenService = tokenService;
     }
 
     [HttpPost("login")]
@@ -32,7 +31,7 @@ public class AuthController : BaseController
         if(!await _userManager.CheckPasswordAsync(user, request.Password))
             return Unauthorized("invalid user password ");
 
-        var jwtToken = GenerateJwtToken(user);
+        var jwtToken = _tokenService.GenerateJwtToken(user);
 
         var cookieOptions = new CookieOptions
         {
@@ -55,33 +54,6 @@ public class AuthController : BaseController
     {
         Response.Cookies.Delete("AuthToken");
         return Ok(new { message = "Successfully logged out" });
-    }
-
-    private string GenerateJwtToken(IdentityUser user)
-    {
-        var key = new SymmetricSecurityKey(
-            Encoding.UTF8.GetBytes(_config["Jwt:Key"])
-            );
-
-        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-        var claims = new[]
-        {
-            new Claim(JwtRegisteredClaimNames.Sub, user.UserName),
-            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-            new Claim(ClaimTypes.NameIdentifier, user.Id)
-        };
-
-
-        var token = new JwtSecurityToken(
-            issuer: _config["Jwt:Issuer"],
-            audience: _config["Jwt:Audience"],
-            claims: claims,
-            expires: DateTime.Now.AddMinutes(int.Parse(_config["Jwt:TokenLifetimeMinutes"])),
-            signingCredentials: creds
-            );
-
-        return new JwtSecurityTokenHandler().WriteToken(token);
     }
 }
 

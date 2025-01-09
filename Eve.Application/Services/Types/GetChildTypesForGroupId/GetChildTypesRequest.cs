@@ -1,5 +1,5 @@
 ﻿using Eve.Domain.Interfaces.ApiServices;
 
-namespace Eve.Application.Services.MarketGroups.GetChildTypes;
+namespace Eve.Application.Services.Types.GetChildTypesForGroupId;
 public record GetChildTypesRequest(
     int GroupId) : IRequest;
