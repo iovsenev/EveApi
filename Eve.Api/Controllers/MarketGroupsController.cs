@@ -1,10 +1,12 @@
 ﻿using Eve.Api.Controllers.Common;
-using Eve.Application.Services;
-using Eve.Application.Services.MarketGroups.GetMarketGroups;
-using Eve.Application.Services.MarketGroups.GetMarketHistory;
-using Eve.Application.Services.MarketGroups.GetOrders;
-using Eve.Application.Services.Types.GetChildTypesForGroupId;
+using Eve.Application.QueryServices;
+using Eve.Application.QueryServices.CommonRequests;
+using Eve.Application.QueryServices.Market.GetMarketGroups;
+using Eve.Application.QueryServices.Market.GetMarketHistory;
+using Eve.Application.QueryServices.Market.GetOrders;
+using Eve.Application.QueryServices.Types.GetChildTypesForMarketGroup;
 using Eve.Domain.Constants;
+using Eve.Domain.Interfaces.CacheProviders;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Eve.Api.Controllers;
@@ -12,18 +14,34 @@ namespace Eve.Api.Controllers;
 public class MarketGroupsController : BaseController
 {
     private readonly IQueryHandler _handler;
-    public MarketGroupsController(IQueryHandler handler)
+    private readonly IRedisProvider _redisProvider;
+
+    public MarketGroupsController(IQueryHandler handler,
+        IRedisProvider redisProvider)
     {
         _handler = handler;
+        _redisProvider = redisProvider;
     }
 
     [HttpGet("groups")]
     public async Task<IActionResult> GetAll(
         CancellationToken token)
     {
-        var result = await _handler.Send<GetMarketGroupsResponse>(new GetMarketGroupsRequest(), token);
+        //var key = $"{HttpContext.Request.Path.Value}";
+
+        //var response = await _redisProvider.GetAsync<GetMarketGroupsResponse>(key, token);
+
+        //if (response is not null)
+        //    return Ok(response);
+
+        var result = await _handler.Send<GetMarketGroupsResponse>(new GetCommonEmptyRequest(), token);
 
         if (result.IsFailure) return StatusCode((int)result.Error.ErrorCode, result.Error);
+
+        //await _redisProvider.SetAsync(key, result.Value, new DistributedCacheEntryOptions
+        //{
+        //    AbsoluteExpiration = DateTime.Today.AddDays(1)
+        //}, token);
 
         return Ok(result.Value);
     }
@@ -33,7 +51,17 @@ public class MarketGroupsController : BaseController
         int groupId,
         CancellationToken token)
     {
-        var typesResult = await _handler.Send<GetChildTypesResponse>(new GetChildTypesRequest(groupId), token);
+        var key = $"{HttpContext.Request.Path.Value}";
+
+        //var typesResult = await _redisProvider.GetOrSetAsync(
+        //    key,
+        //    () => _handler.Send<GetChildTypesResponse>(new GetCommonRequestForId(groupId), token),
+        //    new DistributedCacheEntryOptions
+        //    {
+        //        AbsoluteExpiration = DateTime.Today.AddDays(1)
+        //    },
+        //    token);
+        var typesResult = await _handler.Send<GetChildTypesResponse>(new GetCommonRequestForId(groupId), token);
 
         if (typesResult.IsFailure) return StatusCode((int)typesResult.Error.ErrorCode, typesResult.Error);
 
@@ -46,11 +74,26 @@ public class MarketGroupsController : BaseController
         [FromQuery] int regionId = (int)CentralHubRegionId.Jita,
         CancellationToken token = default)
     {
+        var key = $"{HttpContext.Request.Path.Value}:{regionId}";
+
+        //var result = await _redisProvider.GetOrSetAsync(
+        //    key,
+        //    () => _handler.Send<GetOrdersResponse>(
+        //        new GetOrdersRequest(
+        //            TypeId: typeId,
+        //            RegionId: regionId),
+        //        token),
+        //    new DistributedCacheEntryOptions
+        //    {
+        //        AbsoluteExpiration = DateTime.Now.AddSeconds(4)
+        //    },
+        //    token);
+
         var result = await _handler.Send<GetOrdersResponse>(
-            new GetOrdersRequest(
-                TypeId:typeId,
-                RegionId: regionId),
-            token);
+                new GetOrdersRequest(
+                    TypeId: typeId,
+                    RegionId: regionId),
+                token);
 
         if (result.IsFailure)
             return StatusCode((int)result.Error.ErrorCode, result.Error);
@@ -64,11 +107,25 @@ public class MarketGroupsController : BaseController
         [FromQuery] int regionId = (int)CentralHubRegionId.Jita,
         CancellationToken token = default)
     {
+        var key = $"{HttpContext.Request.Path.Value}:{regionId}";
+        //var result = await _redisProvider.GetOrSetAsync(
+        //    key,
+        //    () => _handler.Send<GetMarketHistoryResponse>(
+        //        new GetMarketHistoryRequest(
+        //            RegionId: regionId,
+        //            TypeId: typeId),
+        //        token),
+        //    new DistributedCacheEntryOptions
+        //    {
+        //        AbsoluteExpiration = DateTime.Today.AddDays(1)
+        //    },
+        //    token);
+
         var result = await _handler.Send<GetMarketHistoryResponse>(
-            new GetMarketHistoryRequest(
-                RegionId: regionId,
-                TypeId: typeId),
-            token);
+                new GetMarketHistoryRequest(
+                    RegionId: regionId,
+                    TypeId: typeId),
+                token);
 
         if (result.IsFailure)
             return StatusCode((int)result.Error.ErrorCode, result.Error);

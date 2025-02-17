@@ -3,31 +3,40 @@ using Eve.Domain.Constants;
 using Eve.Domain.ExternalTypes;
 using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.ExternalServices;
+using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using StackExchange.Redis;
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using System.Runtime.CompilerServices;
+using System.Text;
 using System.Text.Json;
 
 namespace Eve.Infrastructure.ExternalServices;
 
-public class EveApiClientProvider : IEveApiClientProvider
+public class EveApiClientProvider : IEveApiOpenClientProvider, IEveApiAuthClientProvider
 {
-    private const int MaxConcurrentRequests = 30;
-    int _complitedRequest = 0;
-    SemaphoreSlim _semaphore = new SemaphoreSlim(MaxConcurrentRequests);
+    private const int MaxRetryCount = 3;
+    private const int RetryDelay = 2000;
+    private readonly string _clientId;
+    private readonly string _clientSecret;
+
     private readonly HttpClient _httpClient;
+    private readonly IEveGlobalRateLimit _glodalRateLimit;
     private readonly JsonSerializerOptions _serializerOptions;
     private readonly IRedisProvider _redisProvider;
+    private readonly IConfiguration _config;
     private readonly ILogger<EveApiClientProvider> _logger;
+
+
 
     public EveApiClientProvider(
         HttpClient httpClient,
         IRedisProvider redisProvider,
-        ILogger<EveApiClientProvider> logger)
+        ILogger<EveApiClientProvider> logger,
+        IConfiguration config,
+        IEveGlobalRateLimit glodalRateLimit)
     {
         _httpClient = httpClient;
         _serializerOptions = new JsonSerializerOptions
@@ -36,224 +45,334 @@ public class EveApiClientProvider : IEveApiClientProvider
         };
         _logger = logger;
         _redisProvider = redisProvider;
+        _glodalRateLimit = glodalRateLimit;
+        _config = config;
+        _clientId = _config["ESI:ClientId"];
+        _clientSecret = _config["ESI:ClientSecret"];
     }
 
-    public async Task<Result<ICollection<TypeOrdersInfo>>> GetTypeOrdersInfo(
+    public async Task<Result<ICollection<TypeOrdersInfo>>> FetchOrdersForTypeIdAsync(
         int regionId,
         int typeId,
         CancellationToken token,
         string orderType = "all")
     {
+        var allData = new ConcurrentBag<TypeOrdersInfo>();
+
         var page = 1;
-        var allData = new List<TypeOrdersInfo>();
-        while (true)
+        var attempts = 0;
+
+        //HttpResponseMessage response = null;
+        var baseKey = $"{GlobalKeysCacheConstants.ETagForOrdersWithType}:{typeId}:{regionId}:";
+        var key = $"{baseKey}{page}";
+
+        string baseUrl =
+            @$"markets/{regionId}/orders/?datasource=tranquility&order_type={orderType}&type_id={typeId}&page=";
+        var url = $"{baseUrl}{page}";
+        try
         {
-            string url =
-                @$"https://esi.evetech.net/latest/markets/{regionId}/orders/?datasource=tranquility&order_type={orderType}&page={page}&type_id={typeId}";
+            var countPages = await ProcessFetching(key, url, allData, token);
+
+            if (countPages > 1)
+            {
+                await LoadMorePageAsync(countPages, baseKey, baseUrl, allData, token);
+            }
+        }
+        catch (HttpRequestException e)
+        {
+            _logger.LogWarning($"Bad request from url: {url} start retry number {attempts}");
+            return Error.InternalServer(e.Message);
+        }
+        catch (Exception e)
+        {
+            return Error.InternalServer(e.Message);
+        }
+        return allData.Any() ? allData.ToList() : Error.NotModified();
+    }
+
+    public async Task<Result<ICollection<TypeMarketHistoryInfo>>> FetchMarketHistoryForTypeIdAsync(
+        int typeId,
+        int regionId,
+        CancellationToken token)
+    {
+        var key = $"{GlobalKeysCacheConstants.ETagForHistoryWithType}:{typeId}:{regionId}";
+        string url =
+            @$"markets/{regionId}/history/?datasource=tranquility&type_id={typeId}";
+        var allData = new ConcurrentBag<TypeMarketHistoryInfo>();
+
+        var attempts = 0;
+
+        while (attempts <= MaxRetryCount)
+        {
             try
             {
-
-                HttpResponseMessage response = await _httpClient.GetAsync(url);
-                response.EnsureSuccessStatusCode();
-
-                var data = await response.Content.ReadFromJsonAsync<ICollection<TypeOrdersInfo>>(_serializerOptions, token);
-                if (data == null || data.Count == 0) break;
-
-                allData.AddRange(data);
-                page++;
+                await ProcessFetching(key, url, allData, token);
+                break; ;
             }
             catch (HttpRequestException e)
             {
-                break;
+                if (++attempts > MaxRetryCount)
+                    return Error.InternalServer(e.Message);
+                _logger.LogWarning($"Bad request from url: {url} start retry number {attempts}");
+                await Task.Delay(RetryDelay, token);
             }
             catch (Exception e)
             {
                 return Error.InternalServer(e.Message);
             }
         }
-        return allData;
+        return allData.Any() ? allData.ToList() : Error.NotModified();
     }
 
-    public async Task<Result<ICollection<TypeMarketHistoryInfo>>> GetTypeHistoryInfo(
-        int typeId,
+    public async Task<Result<List<TypeOrdersInfo>>> FetchAllOrdersAsync(
         int regionId,
         CancellationToken token)
     {
-        var allData = new List<TypeMarketHistoryInfo>();
-        string url =
-            @$"https://esi.evetech.net/latest/markets/{regionId}/history/?datasource=tranquility&type_id={typeId}";
+        var page = 1;
+        var countPages = 1;
+
+        string baseUrl =
+            @$"markets/{regionId}/orders/?datasource=tranquility&order_type=all&page=";
+        var baseKey = $"{GlobalKeysCacheConstants.ETagForAllOrders}:{regionId}:";
+
+        var allData = new ConcurrentBag<TypeOrdersInfo>();
+
+        var url = $"{baseUrl}{page}";
+        var key = $"{baseKey}{page}";
+
         try
         {
+            countPages = await ProcessFetching(key, url, allData, token);
 
-            HttpResponseMessage response = await _httpClient.GetAsync(url);
-            response.EnsureSuccessStatusCode();
-
-            var data = await response.Content.ReadFromJsonAsync<ICollection<TypeMarketHistoryInfo>>(_serializerOptions, token);
-            if (data == null || data.Count == 0)
-                return allData;
-            allData.AddRange(data);
-
+            if (countPages > 1)
+                await LoadMorePageAsync(countPages, baseKey, baseUrl, allData, token);
         }
         catch (HttpRequestException e)
         {
-            return Error.BadRequest($"Request to third party api failed with message: {e.Message}");
+            _logger.LogWarning($"Bad request start from url {url}");
+            return Error.InternalServer(e.Message);
         }
         catch (Exception e)
         {
+            _logger.LogError($"Exception occurred with message: {e.Message}");
             return Error.InternalServer(e.Message);
         }
 
-        return allData;
+        return allData.Any() ? allData.ToList() : Error.NotModified();
     }
 
-    public async Task<Result<List<TypeOrdersInfo>>> LoadAllOrdersAsync(
-        int regionId,
+    public async Task<Result<JwksMetadata>> FetchJwksMetadataAsync(CancellationToken token)
+    {
+        try
+        {
+            var metadataResponse = await _glodalRateLimit.RunTaskAsync(
+                async () => await _httpClient.GetAsync(EveConstants.MetadataUrl),
+                true,
+                token);
+
+            if (!metadataResponse.IsSuccessStatusCode)
+                return Error.InternalServer("");
+
+            var metadata = await HandleRequestAsync<MetadataResponse>(metadataResponse, token);
+            if (metadata.IsFailure)
+                return Error.InternalServer();
+
+            var jwksResponse = await _glodalRateLimit.RunTaskAsync(
+                async () => await _httpClient.GetAsync(metadata.Value.JwksUri),
+                true,
+                token);
+
+            if (!jwksResponse.IsSuccessStatusCode)
+                return Error.InternalServer("");
+
+            var jwksMetadata = await HandleRequestAsync<JwksMetadata>(jwksResponse, token);
+            if (jwksMetadata.IsFailure)
+                return Error.InternalServer();
+
+            return jwksMetadata.Value is not null ? jwksMetadata.Value : Error.InternalServer();
+        }
+        catch (Exception ex)
+        {
+            return Error.InternalServer($"Fetichin canceled with error: {ex.Message}");
+        }
+    }
+
+    public async Task<Result<TokenResponse>> ExchangeCodeForTokenAsync(
+        string code,
         CancellationToken token)
     {
-        var key = $"{GlobalKeysCacheConstants.OrdersKey}:{GlobalKeysCacheConstants.ETag}";
-        var etag = await _redisProvider.GetAsync<string>(key, token);
 
-        var page = 1;
+        if (string.IsNullOrEmpty(code))
+            return Error.InternalServer($"code is null or emty");
 
-        string baseUrl =
-            @$"https://esi.evetech.net/latest/markets/{regionId}/orders/?datasource=tranquility&order_type=all&page=";
-        var allData = new ConcurrentBag<TypeOrdersInfo>();
+        var credentials = Convert.ToBase64String(Encoding.UTF8.GetBytes($"{_clientId}:{_clientSecret}"));
 
-        var response = await SendRequestWithEtag(
-            url: $"{baseUrl}{1}",
-            token: token,
-            eTag: etag);
-
-        if (response.StatusCode == System.Net.HttpStatusCode.NotModified)
+        using var request = new HttpRequestMessage(HttpMethod.Post, EveConstants.LoginUrlToken)
         {
-            return Error.NotModified();
-        }
+            Headers = { Authorization = new AuthenticationHeaderValue("Basic", credentials) },
+            Content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                { "grant_type", "authorization_code" },
+                { "code", code }
+            })
+        };
 
-        if (!response.IsSuccessStatusCode)
+        try
         {
-            Error.InternalServer();
+            var response = await _glodalRateLimit.RunTaskAsync(
+               async () => await _httpClient.SendAsync(request),
+               false,
+               token);
+
+            if (!response.IsSuccessStatusCode)
+                return Error.InternalServer("Auth faled");
+
+            var tokenData = await response.Content.ReadFromJsonAsync<TokenResponse>(
+                _serializerOptions);
+
+            return tokenData is not null ? tokenData : Error.InternalServer("Auth faled");
         }
-
-        var newEtag = response.Headers.ETag?.Tag;
-
-        if (newEtag is not null)
+        catch (Exception ex)
         {
-            await _redisProvider.SetAsync(key, newEtag, token);
+            return Error.InternalServer(ex.Message);
         }
-
-        var content = await response.Content.ReadFromJsonAsync<ICollection<TypeOrdersInfo>>(_serializerOptions, token);
-        if (content is null)
-            return Error.NotModified();
-        foreach (var item in content)
-            allData.Add(item);
-
-        var pageCount = GetPageCount(response);
-        if (pageCount <= 1)
-            return allData.ToList();
-
-        await FetchPagesWithRateLimitAsync(baseUrl, pageCount, allData, token);
-
-        return allData.ToList();
     }
 
-    private Task<HttpResponseMessage> SendRequestWithEtag(string url, CancellationToken token, string? eTag = null)
+    private async Task<int> ProcessFetching<T>(
+        string key,
+        string url,
+        ConcurrentBag<T> allData,
+        CancellationToken token)
     {
+        var response = await _glodalRateLimit.RunTaskAsync(
+                async () => await SendRequestWithEtag(url, key, token),
+                false,
+                token);
+
+        var dataResult = await HandleRequestAsync<List<T>>(
+            response,
+            key,
+            token);
+
+        if (dataResult.IsSuccess)
+        {
+            var data = dataResult.Value;
+
+            if (data.Count > 0)
+            {
+                foreach (var item in data)
+                {
+                    allData.Add(item);
+                }
+            }
+        }
+
+        return GetPageCount(response);
+    }
+
+    private async Task<HttpResponseMessage> SendRequestWithEtag(
+        string url,
+        string key,
+        CancellationToken token)
+    {
+        var eTag = await _redisProvider.GetAsync<string>(key, token);
+
+        _logger.LogInformation($"Start load for url : {url}");
         var request = new HttpRequestMessage(HttpMethod.Get, url);
 
         if (!string.IsNullOrEmpty(eTag))
             request.Headers.Add("If-None-Match", eTag);
 
-        return _httpClient.SendAsync(request);
+        return await _httpClient.SendAsync(request, token);
     }
 
-    int GetPageCount(HttpResponseMessage response)
+    private async Task LoadMorePageAsync<T>(
+        int countPages,
+        string baseKey,
+        string baseUrl,
+        ConcurrentBag<T> allData,
+        CancellationToken token)
+    {
+        var tasks = new List<Task>();
+        for (int i = 2; i <= countPages; i++)
+        {
+            var page = i;
+            var key = $"{baseKey}{page}";
+            string url = @$"{baseUrl}{page}";
+
+            tasks.Add(Task.Run(async () =>
+            {
+                try
+                {
+                    await ProcessFetching(key, url, allData, token);
+                }
+                catch (HttpRequestException e)
+                {
+                    _logger.LogError($"{e.Message} from url : {url}");
+                }
+                catch (Exception e)
+                {
+                    throw new Exception(e.Message);
+                }
+                finally
+                {
+                    _logger.LogInformation($"============ Cancel load for {url}/{countPages} ===================");
+                }
+            }));
+        }
+        await Task.WhenAll(tasks);
+    }
+
+    private int GetPageCount(HttpResponseMessage response)
     {
         if (response.Headers.TryGetValues("X-Pages", out var pageCount))
             return int.Parse(pageCount.First());
         return 1;
     }
 
-    private async Task FetchPagesWithRateLimitAsync(
-        string baseUrl,
-        int totalPages,
-        ConcurrentBag<TypeOrdersInfo> allData,
+    private async Task<Result<T>> HandleRequestAsync<T>(
+        HttpResponseMessage response,
+        string key,
         CancellationToken token)
     {
-
-        var tasks = new List<Task>();
-        var stopwatch = Stopwatch.StartNew();
-        int page = 2;
-        while (page <= totalPages)
+        if (response.StatusCode == HttpStatusCode.NotModified)
         {
-            await _semaphore.WaitAsync(token);
-
-            if (page > totalPages)
-                break;
-
-            Interlocked.Increment(ref _complitedRequest);
-            tasks.Add(Task.Run(async () =>
-            {
-                try
-                {
-                    if (page > totalPages)
-                        return;
-                    await FetchPageAsync($"{baseUrl}{page}", allData, token);
-                }
-                finally
-                {
-                    _semaphore.Release();
-                }
-            }, token));
-
-            if (_complitedRequest >= MaxConcurrentRequests)
-            {
-                stopwatch.Stop();
-
-                var elapsed = stopwatch.ElapsedMilliseconds;
-                if (elapsed < 1000)
-                {
-                    await Task.Delay(1000 - (int)elapsed, token);
-                }
-                _complitedRequest = 0;
-                stopwatch.Restart();
-                _logger.LogInformation($"Loaging {page} pages in {elapsed}ms");
-            }
-
-            page++;
+            return Error.NotModified();
+        }
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new HttpRequestException($"bad request with status code {response.StatusCode}");
         }
 
-        await Task.WhenAll(tasks);
+        var newEtag = response.Headers.ETag?.Tag;
 
-        _logger.LogInformation($"Loading {page - 1} pages");
+        if (newEtag is not null)
+        {
+            await _redisProvider.SetAsync(
+                key,
+                newEtag,
+                new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpiration = DateTime.UtcNow.AddHours(1)
+                },
+                token);
+        }
 
+        var data = await response.Content.ReadFromJsonAsync<T>(_serializerOptions, token);
+
+        return data is null ? Error.NotModified() : data;
     }
-
-    private async Task FetchPageAsync(
-        string url,
-        ConcurrentBag<TypeOrdersInfo> allData,
+    private async Task<Result<T>> HandleRequestAsync<T>(
+        HttpResponseMessage response,
         CancellationToken token)
     {
-        try
+        if (!response.IsSuccessStatusCode)
         {
-            var response = await _httpClient.GetAsync(url, token);
-
-            if (!response.IsSuccessStatusCode)
-                throw new HttpRequestException($"Error for request : {response.StatusCode}, URL: {url}");
-
-            var content = await response.Content.ReadFromJsonAsync<ICollection<TypeOrdersInfo>>(_serializerOptions, token);
-
-            if (content is not null)
-            {
-                foreach (var item in content)
-                    allData.Add(item);
-            }
-
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning($"Error for request: {url}. Exceptions: {ex.Message}");
+            throw new HttpRequestException($"bad request with status code {response.StatusCode}");
         }
 
+        var data = await response.Content.ReadFromJsonAsync<T>(_serializerOptions, token);
 
+        return data is null ? Error.NotModified() : data;
     }
 }

@@ -3,14 +3,14 @@ services:
     environment:
       - ASPNETCORE_ENVIRONMENT=Development
       - ASPNETCORE_HTTP_PORTS=5000
-      # - ASPNETCORE_HTTPS_PORTS=6001
+      - ASPNETCORE_HTTPS_PORTS=6001
       - ConnectionStrings__Database=Host=eve.db;Port=5432;Database=eve;Username=postgres;Password=1234
       - ConnectionStrings__AuthDatabase=Host=eve.db;Port=5432;Database=eve_auth;Username=postgres;Password=1234
       - Admin__Name=vasya
       - Admin__Password=ewQ_1234
     ports:
       - "5000:5000"
-      # - "6001:6001"
+      - "6001:6001"
     volumes:
       - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
       - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro

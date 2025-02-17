@@ -1,4 +1,5 @@
-﻿using Eve.Domain.Interfaces.CacheProviders;
+﻿using Eve.Domain.Constants;
+using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.DataBaseAccess.Read;
 using Eve.Domain.Interfaces.DataBaseAccess.Write;
 using Eve.Domain.Interfaces.ExternalServices;
@@ -27,6 +28,7 @@ public static class DependencyInjection
     {
         services.AddScoped<ICategoryRepository, CategoryRepository>();
         services.AddScoped<IReadCategoryRepository, ReadCategoryRepository>();
+        services.AddScoped<IReadRegionRepository, ReadRegionRepository>();
         services.AddScoped<ILoadRepository, LoadRepository>();
         services.AddScoped<IMarketReadRepository, MarketGroupRepository>();
         services.AddScoped<ITypeReadRepository, TypeRepository>();
@@ -59,8 +61,18 @@ public static class DependencyInjection
 
     private static IServiceCollection AddProviders(this IServiceCollection services)
     {
-        //services.AddSingleton<IEveApiClientProvider, EveApiClientProvider>();
-        services.AddHttpClient<IEveApiClientProvider, EveApiClientProvider>();
+        services.AddSingleton<IEveGlobalRateLimit, EveGlobalRateLimit>();
+
+        services.AddHttpClient<IEveApiOpenClientProvider, EveApiClientProvider>(client =>
+        {
+            client.BaseAddress = new Uri(EveConstants.BaseUrlEsi);
+        });
+
+        services.AddHttpClient<IEveApiAuthClientProvider, EveApiClientProvider>(client =>
+        {
+            client.BaseAddress = new Uri(EveConstants.BaseUrlEsi);
+        });
+
         services.AddSingleton<IRedisProvider, RedisProvider>();
 
         return services;

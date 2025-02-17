@@ -23,14 +23,15 @@ builder.Services.AddLogging(builder =>
 builder.Services.ConfigureIdentity(configuration);
 builder.Services.AddScoped<AdminAdder>();
 
-builder.Services.AddHostedService<LoadOrdersBackgroundService>();
+//builder.Services.AddHostedService<LoadOrdersBackgroundService>();
+//builder.Services.AddHostedService<AppTokenAcessBackgroundService>();
 
 builder.Services.AddCors( opt =>
 {
     opt.AddPolicy("frontendPolicy", policy =>
     {
         policy.WithOrigins("http://localhost:3000")
-        .WithHeaders("Content-Type", "Authorization", "X-Client-ID")
+        .AllowAnyHeader()
         .AllowCredentials()
         .AllowAnyMethod();
     });

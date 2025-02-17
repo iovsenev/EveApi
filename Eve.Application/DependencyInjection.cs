@@ -1,10 +1,11 @@
-﻿using Eve.Application.DTOs;
-using Eve.Application.ExternalDataLoaders;
+﻿using Eve.Application.AuthServices.AuthTokenService;
+using Eve.Application.DTOs;
+using Eve.Application.InternalServices;
+using Eve.Application.InternalServices.TokenService;
 using Eve.Application.Mapping;
-using Eve.Application.Services;
-using Eve.Application.Services.AuthServices;
-using Eve.Application.Services.Stations.GetStations;
-using Eve.Application.Services.Types.GetChildTypesForGroupId;
+using Eve.Application.QueryServices;
+using Eve.Application.QueryServices.Stations.GetStations;
+using Eve.Application.QueryServices.Types.GetChildTypesForMarketGroup;
 using Eve.Application.StaticDataLoaders;
 using Eve.Application.StaticDataLoaders.Common;
 using Eve.Application.StaticDataLoaders.ConvertFromYaml.bsd;
@@ -23,15 +24,18 @@ public static class DependencyInjection
     {
         AddServices(services);
 
-        services.AddAutoMapper(typeof(GroupProfile));
+        services.AddAutoMapper(typeof(MarketProfile));
 
         return services;
     }
 
     private static void AddServices(IServiceCollection services)
     {
+        services.AddScoped<EveSsoJwtValidator>();
+
         services.AddScoped<EntityLoader>();
-        services.AddScoped<IOrdersLoader,OrdersLoader>();
+        services.AddScoped<ILoadOrdersService,LoadOrdersService>();
+        services.AddScoped<IEsiTokenService,EsiTokenService>();
 
         services.AddScoped<TypesFileReader>();
         services.AddScoped<BlueprintsFileReader>();

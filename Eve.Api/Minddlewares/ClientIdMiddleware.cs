@@ -12,6 +12,13 @@ public class ClientIdMiddleware
 
     public async Task InvokeAsync(HttpContext context)
     {
+        if (context.Request.Path.StartsWithSegments("/callback"))
+        {
+            // Пропускаем проверку на X-Client-Id для callback-урлов
+            await _next(context);
+            return;
+        }
+
         if (context.Request.Headers.ContainsKey("X-Client-Id"))
         {
             var clientId = context.Request.Headers["X-Client-Id"].ToString();

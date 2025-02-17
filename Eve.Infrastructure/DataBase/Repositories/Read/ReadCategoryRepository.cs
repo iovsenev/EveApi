@@ -14,7 +14,7 @@ public class ReadCategoryRepository : IReadCategoryRepository
         _appDbContext = appDbContext;
     }
 
-    public async Task<ICollection<CategoryEntity>> GetCategoryForPruduct(CancellationToken token)
+    public async Task<Result<ICollection<CategoryEntity>>> GetCategoryForPruduct(CancellationToken token)
     {
         var categories = await _appDbContext.Categories
             .AsNoTracking()
@@ -22,10 +22,13 @@ public class ReadCategoryRepository : IReadCategoryRepository
                 .Any(g => g.Types.Any(t => t.IsProduct && t.Published)))
             .ToListAsync();
 
+        if (!categories.Any())
+            return Error.NotFound($"No entities found");
+
         return categories;
     }
 
-    public async Task<ICollection<GroupEntity>> GetGroupsForCategoryIdWithProducts(int id, CancellationToken token)
+    public async Task<Result<ICollection<GroupEntity>>> GetGroupsForCategoryIdWithProducts(int id, CancellationToken token)
     {
         var groups = await _appDbContext.Groups
             .AsNoTracking()
@@ -40,6 +43,7 @@ public class ReadCategoryRepository : IReadCategoryRepository
         var types = await _appDbContext.Types
             .AsNoTracking()
             .Where(t => t.IsProduct && t.Published && t.GroupId == id)
+            .Include(t => t.Icon)
             .ToListAsync();
 
         if (!types.Any())

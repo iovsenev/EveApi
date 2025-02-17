@@ -1,5 +1,5 @@
 ﻿using Eve.Api.Controllers.Common;
-using Eve.Application.Services.AuthServices;
+using Eve.Application.AuthServices.AuthTokenService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -36,8 +36,8 @@ public class AuthController : BaseController
         var cookieOptions = new CookieOptions
         {
             HttpOnly = true,
-            Secure = true,
-            SameSite = SameSiteMode.Strict,
+            Secure = false,
+            SameSite = SameSiteMode.Unspecified,
             Expires = DateTime.UtcNow.AddDays(7)
         };
 

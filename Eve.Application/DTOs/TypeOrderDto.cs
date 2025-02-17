@@ -4,6 +4,7 @@ public class TypeOrderDto
     public long OrderId { get; set; }
     public int TypeId { get; set; }
     public int SystemId { get; set; }
+    public long LocationId { get; set; }
     public string StationName { get; set; }
     public int MinVolume { get; set; }
     public int VolumeRemain { get; set; }
