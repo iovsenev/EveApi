@@ -21,7 +21,7 @@ public class GetCategoriesHandler : IRequestHandler<GetCategoriesResponse, GetCo
 
     public async Task<Result<GetCategoriesResponse>> Handle(GetCommonEmptyRequest request, CancellationToken token)
     {
-        var result = await _repository.GetCategoryForPruduct(token);
+        var result = await _repository.GetCategoryWithProduct(token);
 
         if (result.IsFailure)
             return result.Error;

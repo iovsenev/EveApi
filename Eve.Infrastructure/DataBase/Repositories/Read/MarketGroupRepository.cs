@@ -7,9 +7,9 @@ using Microsoft.EntityFrameworkCore;
 namespace Eve.Infrastructure.DataBase.Repositories.Read;
 public class MarketGroupRepository : IMarketReadRepository
 {
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
 
-    public MarketGroupRepository(AppDbContext context)
+    public MarketGroupRepository(IAppDbContext context)
     {
         _context = context;
     }
@@ -47,6 +47,6 @@ public class MarketGroupRepository : IMarketReadRepository
             .Include(g => g.Icon)
             .ToListAsync();
 
-        return entities;
+        return entities.Any() ? entities : Error.NotFound("no entities not found");
     }
 }

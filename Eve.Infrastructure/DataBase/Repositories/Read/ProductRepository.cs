@@ -8,9 +8,9 @@ using System.Runtime.CompilerServices;
 namespace Eve.Infrastructure.DataBase.Repositories.Read;
 public class ProductRepository : IProductRepository
 {
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
 
-    public ProductRepository(AppDbContext context)
+    public ProductRepository(IAppDbContext context)
     {
         _context = context;
     }
@@ -34,7 +34,8 @@ public class ProductRepository : IProductRepository
             .Where(m => m.ProductId == productId)
             .ToListAsync();
 
-        if (result is null) return Error.NotFound($"Not found materials for product with id: {productId}");
+        if (result is null || !result.Any()) 
+            return Error.NotFound($"Not found materials for product with id: {productId}");
 
         return result;
     }

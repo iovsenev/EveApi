@@ -40,7 +40,7 @@ public static class DependencyInjection
 
     private static IServiceCollection AddContexts(this IServiceCollection services, IConfiguration configuration)
     {
-        services.AddDbContext<AppDbContext>(opt =>
+        services.AddDbContext<IAppDbContext, AppDbContext>(opt =>
         {
             opt.UseNpgsql(configuration.GetConnectionString("Database"));
         });

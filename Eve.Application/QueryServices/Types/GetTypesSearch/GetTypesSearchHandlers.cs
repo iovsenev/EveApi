@@ -25,7 +25,7 @@ public class GetTypesSearchHandler : IRequestHandler<GetTypesSearchResponse, Get
     public async Task<Result<GetTypesSearchResponse>> Handle(GetTypesSearchRequest request, CancellationToken token)
     {
         var query = request.Query;
-        var result = await _repository.GetTypesByNameConteins(query, token);
+        var result = await _repository.GetTypesByNameContains(query, token);
 
         if (result.IsFailure) return result.Error;
 
