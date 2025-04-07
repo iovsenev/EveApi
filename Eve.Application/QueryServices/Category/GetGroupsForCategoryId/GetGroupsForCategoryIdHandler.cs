@@ -8,11 +8,11 @@ using Eve.Domain.Interfaces.DataBaseAccess.Read;
 namespace Eve.Application.QueryServices.Category.GetGroupsForCategoryId;
 public class GetGroupsForCategoryIdHandler : IRequestHandler<GetGroupsForCategoryIdResponse, GetCommonRequestForId>
 {
-    private readonly IReadCategoryRepository _repository;
+    private readonly IReadGroupRepository _repository;
     private readonly IMapper _mapper;
 
     public GetGroupsForCategoryIdHandler(
-        IReadCategoryRepository repository,
+        IReadGroupRepository repository,
         IMapper mapper)
     {
         _repository = repository;

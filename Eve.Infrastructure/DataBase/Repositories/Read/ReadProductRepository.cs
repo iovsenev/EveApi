@@ -6,11 +6,11 @@ using Microsoft.EntityFrameworkCore;
 using System.Runtime.CompilerServices;
 
 namespace Eve.Infrastructure.DataBase.Repositories.Read;
-public class ProductRepository : IProductRepository
+public class ReadProductRepository : IReadProductRepository
 {
     private readonly IAppDbContext _context;
 
-    public ProductRepository(IAppDbContext context)
+    public ReadProductRepository(IAppDbContext context)
     {
         _context = context;
     }

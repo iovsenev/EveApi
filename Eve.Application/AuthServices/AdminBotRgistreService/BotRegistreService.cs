@@ -1,10 +1,5 @@
 ﻿using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.ExternalServices;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Eve.Application.AuthServices.AdminBotRgistreService;
 public class BotRegistreService

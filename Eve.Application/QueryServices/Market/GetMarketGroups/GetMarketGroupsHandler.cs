@@ -11,13 +11,13 @@ using Microsoft.Extensions.Logging;
 namespace Eve.Application.QueryServices.Market.GetMarketGroups;
 public class GetMarketGroupsHandler : IRequestHandler<GetMarketGroupsResponse, GetCommonEmptyRequest>
 {
-    private readonly IMarketReadRepository _repos;
+    private readonly IReadMarketGroupRepository _repos;
     private readonly IRedisProvider _redisCache;
     private readonly IMapper _mapper;
     private readonly ILogger<GetMarketGroupsHandler> _logger;
 
     public GetMarketGroupsHandler(
-        IMarketReadRepository repos,
+        IReadMarketGroupRepository repos,
         IRedisProvider redisCache,
         IMapper mapper,
         ILogger<GetMarketGroupsHandler> logger)

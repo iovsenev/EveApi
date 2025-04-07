@@ -7,20 +7,19 @@ using Eve.Domain.Constants;
 using Eve.Domain.Interfaces.ApiServices;
 using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.DataBaseAccess.Read;
-using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 
 namespace Eve.Application.QueryServices.Types.GetChildTypesForGroup;
 
 public class GetChildTypesIsProductForGroupIdHandler : IRequestHandler<GetChildTypesProductResponse, GetCommonRequestForId>
 {
-    private readonly IReadCategoryRepository _repos;
+    private readonly IReadTypeReadRepository _repos;
     private readonly IMapper _mapper;
     private readonly IRedisProvider _redisCache;
     private readonly ILogger<GetChildTypesForMarketGroupIdHandler> _logger;
 
     public GetChildTypesIsProductForGroupIdHandler(
-        IReadCategoryRepository repos,
+        IReadTypeReadRepository repos,
         IMapper mapper,
         IRedisProvider redisCache,
         ILogger<GetChildTypesForMarketGroupIdHandler> logger)

@@ -8,12 +8,12 @@ using Eve.Domain.Interfaces.DataBaseAccess.Read;
 namespace Eve.Application.QueryServices.Types.GetTypesSearch;
 public class GetTypesSearchHandler : IRequestHandler<GetTypesSearchResponse, GetTypesSearchRequest>
 {
-    private readonly ITypeReadRepository _repository;
+    private readonly IReadTypeReadRepository _repository;
     private readonly IRedisProvider _cacheProvider;
     private readonly IMapper _mapper;
 
     public GetTypesSearchHandler(
-        ITypeReadRepository repository,
+        IReadTypeReadRepository repository,
         IRedisProvider cacheProvider,
         IMapper mapper)
     {

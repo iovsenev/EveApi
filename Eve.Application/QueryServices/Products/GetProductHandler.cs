@@ -12,13 +12,13 @@ using Microsoft.Extensions.Caching.Distributed;
 namespace Eve.Application.QueryServices.Products;
 public class GetProductHandler : IRequestHandler<GetProductResponse, GetProductRequest>
 {
-    private readonly IProductRepository _repository;
+    private readonly IReadProductRepository _repository;
     private readonly IRedisProvider _cacheProvider;
     private readonly IMapper _mapper;
     private readonly IEveApiOpenClientProvider _apiClient;
 
     public GetProductHandler(
-        IProductRepository repository,
+        IReadProductRepository repository,
         IRedisProvider cacheProvider,
         IMapper mapper,
         IEveApiOpenClientProvider apiClient)

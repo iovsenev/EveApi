@@ -33,7 +33,7 @@ public class LoadOrdersService : ILoadOrdersService
         var notLoadRegionsId = new List<int>();
         try
         {
-            var result = await _regionRepository.GetAllIdRegions(token);
+            var result = await _regionRepository.GetAllIdRegionsIDs(token);
             if (result.IsFailure)
                 throw new Exception(result.Error.Message);
 

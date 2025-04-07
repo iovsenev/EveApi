@@ -14,7 +14,7 @@ public class ReadRegionRepository : IReadRegionRepository
         _context = context;
     }
 
-    public async Task<Result<List<int>>> GetAllIdRegions(CancellationToken token)
+    public async Task<Result<List<int>>> GetAllIdRegionsIDs(CancellationToken token)
     {
             var regions = await _context.Regions
                 .AsNoTracking()

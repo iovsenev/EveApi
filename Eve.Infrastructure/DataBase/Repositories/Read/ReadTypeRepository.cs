@@ -5,11 +5,11 @@ using Eve.Infrastructure.DataBase.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eve.Infrastructure.DataBase.Repositories.Read;
-public class TypeRepository : ITypeReadRepository
+public class ReadTypeRepository : IReadTypeReadRepository
 {
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
 
-    public TypeRepository(AppDbContext context)
+    public ReadTypeRepository(IAppDbContext context)
     {
         _context = context;
     }
@@ -19,7 +19,7 @@ public class TypeRepository : ITypeReadRepository
         CancellationToken token)
     {
         var types = await _context.Types
-            .Where(t => t.Published && t.MarketGroup != null && t.Name
+            .Where(t => t.Published && t.MarketGroupId != null && t.Name
                                                 .ToLower()
                                                 .StartsWith(containedName
                                                             .ToLower()))
@@ -51,5 +51,19 @@ public class TypeRepository : ITypeReadRepository
             .ToListAsync(token);
 
         return materials;
+    }
+
+    public async Task<Result<ICollection<TypeEntity>>> GetTypeIsProductForGroupId(int id, CancellationToken token)
+    {
+        var types = await _context.Types
+            .AsNoTracking()
+            .Where(t => t.IsProduct && t.Published && t.GroupId == id)
+            .Include(t => t.Icon)
+            .ToListAsync(token);
+
+        if (!types.Any())
+            return Error.NotFound($"No entity found for group id {id}");
+
+        return types;
     }
 }

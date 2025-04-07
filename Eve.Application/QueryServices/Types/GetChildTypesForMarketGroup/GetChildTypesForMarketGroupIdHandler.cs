@@ -12,13 +12,13 @@ using Microsoft.Extensions.Logging;
 namespace Eve.Application.QueryServices.Types.GetChildTypesForMarketGroup;
 public class GetChildTypesForMarketGroupIdHandler : IRequestHandler<GetChildTypesResponse, GetCommonRequestForId>
 {
-    private readonly IMarketReadRepository _repos;
+    private readonly IReadMarketGroupRepository _repos;
     private readonly IMapper _mapper;
     private readonly IRedisProvider _redisCache;
     private readonly ILogger<GetChildTypesForMarketGroupIdHandler> _logger;
 
     public GetChildTypesForMarketGroupIdHandler(
-        IMarketReadRepository repos,
+        IReadMarketGroupRepository repos,
         IMapper mapper,
         IRedisProvider redisCache,
         ILogger<GetChildTypesForMarketGroupIdHandler> logger)

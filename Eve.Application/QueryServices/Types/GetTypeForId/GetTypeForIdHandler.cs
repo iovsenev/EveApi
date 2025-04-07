@@ -13,13 +13,13 @@ using Microsoft.Extensions.Logging;
 namespace Eve.Application.QueryServices.Types.GetTypeForId;
 public class GetTypeForIdHandler : IRequestHandler<GetTypeForIdResponse, GetCommonRequestForId>
 {
-    private readonly ITypeReadRepository _repository;
+    private readonly IReadTypeReadRepository _repository;
     private readonly IRedisProvider _cacheProvider;
     private readonly IEveApiOpenClientProvider _apiProvider;
     private readonly IMapper _mapper;
     private readonly ILogger<GetTypeForIdHandler> _logger;
     public GetTypeForIdHandler(
-        ITypeReadRepository repository,
+        IReadTypeReadRepository repository,
         IRedisProvider cacheProvider,
         IEveApiOpenClientProvider apiProvider,
         IMapper mapper,

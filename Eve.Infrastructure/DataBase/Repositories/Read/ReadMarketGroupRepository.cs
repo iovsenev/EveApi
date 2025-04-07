@@ -5,11 +5,11 @@ using Eve.Infrastructure.DataBase.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eve.Infrastructure.DataBase.Repositories.Read;
-public class MarketGroupRepository : IMarketReadRepository
+public class ReadMarketGroupRepository : IReadMarketGroupRepository
 {
     private readonly IAppDbContext _context;
 
-    public MarketGroupRepository(IAppDbContext context)
+    public ReadMarketGroupRepository(IAppDbContext context)
     {
         _context = context;
     }

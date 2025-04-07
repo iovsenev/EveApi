@@ -10,13 +10,13 @@ using Microsoft.Extensions.Logging;
 namespace Eve.Application.QueryServices.Stations.GetStations;
 public class GetStationName : IService<StationNameDto>
 {
-    private readonly IStationRepository _stationRepos;
+    private readonly IReadStationRepository _stationRepos;
     private readonly IRedisProvider _redis;
     private ILogger<GetStationName> _logger;
     private readonly IMapper _mapper;
 
     public GetStationName(
-        IStationRepository stationRepos,
+        IReadStationRepository stationRepos,
         IRedisProvider redis,
         ILogger<GetStationName> logger,
         IMapper mapper)

@@ -5,11 +5,11 @@ using Eve.Infrastructure.DataBase.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eve.Infrastructure.DataBase.Repositories.Read;
-public class StationRepository : IStationRepository
+public class ReadStationRepository : IReadStationRepository
 {
-    private readonly AppDbContext _context;
+    private readonly IAppDbContext _context;
 
-    public StationRepository(AppDbContext context)
+    public ReadStationRepository(IAppDbContext context)
     {
         _context = context;
     }
