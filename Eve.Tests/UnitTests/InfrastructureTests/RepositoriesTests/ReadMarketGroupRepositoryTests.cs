@@ -2,7 +2,7 @@
 using Eve.Domain.Interfaces.DataBaseAccess.Read;
 using Eve.Infrastructure.DataBase.Contexts;
 using Eve.Infrastructure.DataBase.Repositories.Read;
-using Eve.Tests.UnitTests.InfrastructureTests.RepositoriesTests.Common;
+using Eve.Tests.UnitTests.Common;
 using FluentAssertions;
 
 namespace Eve.Tests.UnitTests.InfrastructureTests.RepositoriesTests;

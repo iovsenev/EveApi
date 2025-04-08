@@ -5,6 +5,10 @@
 
 # Secrets and configurations
 .env
+.ignore
+
+# Directories
+**/CoverageReport/
 
 # User-specific files
 *.rsuser

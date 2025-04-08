@@ -2,7 +2,6 @@
 using Eve.Domain.Interfaces.ApiServices;
 using Microsoft.Extensions.DependencyInjection;
 using System.Collections.Concurrent;
-using System.Windows.Input;
 
 namespace Eve.Application.QueryServices;
 public class QueryHandler : IQueryHandler
@@ -30,13 +29,6 @@ public class QueryHandler : IQueryHandler
             hadler = (RequestHandlerWrapper<TResponse>)wrapper;
             _requestHandlers.TryAdd(typeof(TResponse), hadler);
         }
-        //var handler = (RequestHandlerWrapper<TResponse>)_requestHandlers.GetOrAdd(typeof(TResponse), requestType =>
-        //{
-        //    var wrapperType = typeof(RequestHandlerWrapperImpl<,>).MakeGenericType(requestType, typeof(TResponse));
-        //    var wrapper = Activator.CreateInstance(wrapperType)
-        //        ?? throw new InvalidOperationException($"Could not create wrapper type for {requestType}");
-        //    return (RequestHandlerBase)wrapper;
-        //});
 
         return await hadler.HandleAsync(request, _provider, token);
     }

@@ -1,12 +1,14 @@
-﻿using Eve.Domain.Entities;
+﻿using Eve.Domain.Constants;
+using Eve.Domain.Entities;
 using Eve.Domain.Entities.Products;
 using Eve.Domain.Entities.Universe;
+using Eve.Domain.ExternalTypes;
 
-namespace Eve.Tests.UnitTests.InfrastructureTests.RepositoriesTests.Common;
+namespace Eve.Tests.UnitTests.Common;
 
-class DataStorage
+static class DataStorage
 {
-    public List<CategoryEntity> GetCategories()
+    public static List<CategoryEntity> GetCategories()
     {
         var categories = new List<CategoryEntity>(); ;
 
@@ -24,7 +26,7 @@ class DataStorage
         return categories;
     }
 
-    public List<GroupEntity> GetGroups()
+    public static List<GroupEntity> GetGroups()
     {
         var groups = new List<GroupEntity>();
         var random = new Random();
@@ -44,7 +46,7 @@ class DataStorage
         return groups;
     }
 
-    public List<MarketGroupEntity> GetMarketGroups()
+    public static List<MarketGroupEntity> GetMarketGroups()
     {
         var groups = new List<MarketGroupEntity>();
         var random = new Random();
@@ -90,7 +92,7 @@ class DataStorage
         return groups;
     }
 
-    public List<TypeEntity> GetTypes()
+    public static List<TypeEntity> GetTypes()
     {
         var types = new List<TypeEntity>();
         var random = new Random();
@@ -125,7 +127,7 @@ class DataStorage
         return types;
     }
 
-    public List<ProductEntity> GetProducts()
+    public static List<ProductEntity> GetProducts()
     {
         var types = GetTypes().Where(t => t.IsProduct).ToList();
 
@@ -134,7 +136,7 @@ class DataStorage
         return products;
     }
 
-    public List<ReprocessMaterialEntity> GetReprocessMaterials()
+    public static List<ReprocessMaterialEntity> GetReprocessMaterials()
     {
         var materials = new List<ReprocessMaterialEntity>();
 
@@ -151,7 +153,7 @@ class DataStorage
         return materials;
     }
 
-    public List<ProductMaterialEntity> GetProductMaterials()
+    public static List<ProductMaterialEntity> GetProductMaterials()
     {
         var products = new List<ProductMaterialEntity>();
         var random = new Random();
@@ -170,7 +172,7 @@ class DataStorage
         return products;
     }
 
-    public List<RegionEntity> GetRegions()
+    public static List<RegionEntity> GetRegions()
     {
         var regions = new List<RegionEntity>();
         for (int i = 0; i < 10; i++)
@@ -186,7 +188,7 @@ class DataStorage
         return regions; 
     }
 
-    public List<StationEntity> GetStation()
+    public static List<StationEntity> GetStation()
     {
         var stations = new List<StationEntity>();
 
@@ -201,5 +203,39 @@ class DataStorage
         }
 
         return stations;
+    }
+
+    public static List<TypeMarketHistoryInfo> GetHistory()
+    {
+        var history = new List<TypeMarketHistoryInfo>();
+
+        for (int i = 0; i<20; i++)
+        {
+            history.Add(new TypeMarketHistoryInfo
+            {
+                Date = DateTime.Now.AddSeconds(i).ToString(),
+                Volume = i,
+                OrderCount = i
+            });
+        }
+        return history;
+    }
+
+    public static List<TypeOrdersInfo> GetOrders()
+    {
+        var orders = new List<TypeOrdersInfo>();
+
+        for (int i = 0;i < 20; i++)
+        {
+            orders.Add(new TypeOrdersInfo
+            {
+                OrderId = i + 1,
+                IsBuyOrder = i % 2 == 0,
+                Price = i + 500,
+                LocationId = 1,
+                SystemId = (int)CentralHubSystemId.Jita
+            });
+        }
+        return orders;
     }
 }

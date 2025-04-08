@@ -36,25 +36,16 @@ public class GetProductHandler : IRequestHandler<GetProductResponse, GetProductR
         var blueprintCoeffEff = (100 - request.BlueprintEff) / 100;
         var structCoeffEff = (100 - request.StructEff) / 100;
 
-        var result = await _cacheProvider.GetAsync<ProductDto>(key, token);
+        var result = await _cacheProvider.GetOrSetAsync(
+            key,
+            () => ReadInDatabase(request.TypeId, token),
+            new DistributedCacheEntryOptions
+            {
+                SlidingExpiration = TimeSpan.FromSeconds(10)
+            }, token);
 
-        if (result is null)
-        {
-            var productDataBase = await ReadInDatabase(request.TypeId, token);
-
-            if (productDataBase.IsFailure)
-                return productDataBase.Error;
-            result = productDataBase.Value;
-
-            await _cacheProvider.SetAsync(
-                key,
-                result,
-                new DistributedCacheEntryOptions
-                {
-                    SlidingExpiration = TimeSpan.FromSeconds(10)
-                },
-                token);
-        }
+        if (result.IsFailure)
+            return result.Error; 
 
         var averagePriceType = await GetPriceForType(request.TypeId, token);
 
@@ -64,7 +55,7 @@ public class GetProductHandler : IRequestHandler<GetProductResponse, GetProductR
         double sumPriceMaterialsSell = 0;
         double sumPriceMaterialsBuy = 0;
 
-        foreach (var item in result.Materials)
+        foreach (var item in result.Value.Materials)
         {
             var price = await GetPriceForType(item.TypeId, token);
             if (price.IsFailure)
@@ -79,7 +70,7 @@ public class GetProductHandler : IRequestHandler<GetProductResponse, GetProductR
         sumPriceMaterialsSell = Math.Round(sumPriceMaterialsSell, 2);
 
         return new GetProductResponse(
-            result,
+            result.Value,
             BuyPrice: averagePriceType.Value.buy,
             SellPrice: averagePriceType.Value.sell,
             BuyPriceMaterials: sumPriceMaterialsBuy,
@@ -89,14 +80,12 @@ public class GetProductHandler : IRequestHandler<GetProductResponse, GetProductR
 
     private async Task<Result<ProductDto>> ReadInDatabase(int typeId, CancellationToken token)
     {
-        ProductDto result;
-
         var productEntity = await _repository.GetProductForId(typeId, token);
 
         if (productEntity.IsFailure)
             return productEntity.Error;
 
-        result = _mapper.Map<ProductDto>(productEntity.Value);
+        var result = _mapper.Map<ProductDto>(productEntity.Value);
 
         var materialsEntity = await _repository.GetMaterialsForProductId(result.Id, token);
 
@@ -115,23 +104,21 @@ public class GetProductHandler : IRequestHandler<GetProductResponse, GetProductR
     {
         var key = $"{GlobalKeysCacheConstants.OrdersKey}:{(int)CentralHubRegionId.Jita}:{typeId}";
 
-        var result = await _cacheProvider.GetAsync<ICollection<TypeOrdersInfo>>(key, token);
-        if (result == null)
-        {
-            var resultQuery = await _apiClient.FetchOrdersForTypeIdAsync((int)CentralHubRegionId.Jita, typeId, token);
-            if (resultQuery.IsFailure) return resultQuery.Error;
-            result = resultQuery.Value;
-
-            await _cacheProvider.SetAsync(key, result, new DistributedCacheEntryOptions
+        var result = await _cacheProvider.GetOrSetAsync(
+            key,
+            () => _apiClient.FetchOrdersForTypeIdAsync((int)CentralHubRegionId.Jita, typeId, token),
+            new DistributedCacheEntryOptions
             {
                 AbsoluteExpiration = DateTime.Now.AddHours(4)
             },
-                token);
-        }
+            token);
+
+        if (result.IsFailure) return result.Error;
+
         double buyAverage = 0;
         double sellAverage = 0;
 
-        var buy = result
+        var buy = result.Value
             .Where(o => o.IsBuyOrder);
         if (buy.Any())
         {
@@ -142,7 +129,7 @@ public class GetProductHandler : IRequestHandler<GetProductResponse, GetProductR
                  .Average();
         }
 
-        var sell = result
+        var sell = result.Value
             .Where(o => !o.IsBuyOrder);
 
         if (sell.Any())

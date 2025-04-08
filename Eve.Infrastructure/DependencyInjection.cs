@@ -33,6 +33,7 @@ public static class DependencyInjection
         services.AddScoped<IReadTypeReadRepository, ReadTypeRepository>();
         services.AddScoped<IReadProductRepository, ReadProductRepository>();
         services.AddScoped<IReadStationRepository, ReadStationRepository>();
+        services.AddScoped<IReadGroupRepository, ReadGroupRepository>();
 
         return services;
     }

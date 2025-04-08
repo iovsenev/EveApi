@@ -6,7 +6,6 @@ using Eve.Domain.Constants;
 using Eve.Domain.Interfaces.ApiServices;
 using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.ExternalServices;
-using Microsoft.Extensions.Logging;
 
 namespace Eve.Application.QueryServices.Market.GetOrders;
 public class GetOrdersHandler : IRequestHandler<GetOrdersResponse, GetOrdersRequest>
@@ -15,19 +14,16 @@ public class GetOrdersHandler : IRequestHandler<GetOrdersResponse, GetOrdersRequ
     private readonly IEveApiOpenClientProvider _apiClient;
     private readonly IMapper _mapper;
     private readonly IService<StationNameDto> _stationName;
-    private readonly ILogger<GetOrdersHandler> _logger;
 
     public GetOrdersHandler(
         IRedisProvider cacheProvider,
         IEveApiOpenClientProvider apiClient,
         IMapper mapper,
-        ILogger<GetOrdersHandler> logger,
         IService<StationNameDto> stationName)
     {
         _cacheProvider = cacheProvider;
         _apiClient = apiClient;
         _mapper = mapper;
-        _logger = logger;
         _stationName = stationName;
     }
 

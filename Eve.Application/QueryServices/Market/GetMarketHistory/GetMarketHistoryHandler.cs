@@ -1,5 +1,4 @@
-﻿using AutoMapper;
-using Eve.Domain.Common;
+﻿using Eve.Domain.Common;
 using Eve.Domain.Constants;
 using Eve.Domain.ExternalTypes;
 using Eve.Domain.Interfaces.ApiServices;
@@ -13,16 +12,13 @@ public class GetMarketHistoryHandler : IRequestHandler<GetMarketHistoryResponse,
 {
     private readonly IRedisProvider _cacheProvider;
     private readonly IEveApiOpenClientProvider _apiClientProvider;
-    private readonly ILogger<GetMarketHistoryHandler> _logger;
 
     public GetMarketHistoryHandler(
         IRedisProvider cacheProvider,
-        IEveApiOpenClientProvider apiClientProvider,
-        ILogger<GetMarketHistoryHandler> logger)
+        IEveApiOpenClientProvider apiClientProvider)
     {
         _cacheProvider = cacheProvider;
         _apiClientProvider = apiClientProvider;
-        _logger = logger;
     }
 
     public async Task<Result<GetMarketHistoryResponse>> Handle(GetMarketHistoryRequest request, CancellationToken token)

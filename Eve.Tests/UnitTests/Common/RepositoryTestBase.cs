@@ -1,8 +1,7 @@
-﻿
-using Eve.Infrastructure.DataBase.Contexts;
+﻿using Eve.Infrastructure.DataBase.Contexts;
 using Microsoft.EntityFrameworkCore;
 
-namespace Eve.Tests.UnitTests.InfrastructureTests.RepositoriesTests.Common;
+namespace Eve.Tests.UnitTests.Common;
 
 public abstract class RepositoryTestBase<TRepository> : IAsyncLifetime where TRepository : class
 {

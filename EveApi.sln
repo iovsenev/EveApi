@@ -18,6 +18,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 		.env = .env
 		.gitignore = .gitignore
+		.ignore = .ignore
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Eve.Tests", "Eve.Tests\Eve.Tests.csproj", "{D5C7A459-E1F8-4301-A673-AB270583B470}"

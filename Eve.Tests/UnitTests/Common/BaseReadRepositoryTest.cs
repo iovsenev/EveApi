@@ -1,21 +1,19 @@
-﻿namespace Eve.Tests.UnitTests.InfrastructureTests.RepositoriesTests.Common;
+﻿namespace Eve.Tests.UnitTests.Common;
 
 public abstract class BaseReadRepositoryTest<TRepository> : RepositoryTestBase<TRepository> 
     where TRepository : class
 {
     protected override async Task SeedCommonDataAsync()
     {
-        var storage = new DataStorage();
-
-        var types = storage.GetTypes();
-        var materials = storage.GetReprocessMaterials();
-        var categories = storage.GetCategories();
-        var groups = storage.GetGroups();
-        var marketGroups = storage.GetMarketGroups();
-        var productsMaterials = storage.GetProductMaterials();
-        var products = storage.GetProducts();
-        var regions = storage.GetRegions();
-        var stations = storage.GetStation();
+        var types = DataStorage.GetTypes();
+        var materials = DataStorage.GetReprocessMaterials();
+        var categories = DataStorage.GetCategories();
+        var groups = DataStorage.GetGroups();
+        var marketGroups = DataStorage.GetMarketGroups();
+        var productsMaterials = DataStorage.GetProductMaterials();
+        var products = DataStorage.GetProducts();
+        var regions = DataStorage.GetRegions();
+        var stations = DataStorage.GetStation();
 
         await Context.Types.AddRangeAsync(types);
         await Context.ReprocessMaterials.AddRangeAsync(materials);
