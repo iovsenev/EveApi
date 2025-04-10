@@ -36,6 +36,7 @@ public static class DependencyInjection
         services.AddScoped<EntityLoader>();
         services.AddScoped<ILoadOrdersService,LoadOrdersService>();
         services.AddScoped<IEsiTokenService,EsiTokenService>();
+        services.AddScoped<IFileSystem, FileSystem>();
 
         services.AddScoped<TypesFileReader>();
         services.AddScoped<BlueprintsFileReader>();

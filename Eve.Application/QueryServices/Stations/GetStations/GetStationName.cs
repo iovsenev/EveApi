@@ -5,25 +5,21 @@ using Eve.Domain.Constants;
 using Eve.Domain.Entities;
 using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.DataBaseAccess.Read;
-using Microsoft.Extensions.Logging;
 
 namespace Eve.Application.QueryServices.Stations.GetStations;
 public class GetStationName : IService<StationNameDto>
 {
     private readonly IReadStationRepository _stationRepos;
     private readonly IRedisProvider _redis;
-    private ILogger<GetStationName> _logger;
     private readonly IMapper _mapper;
 
     public GetStationName(
         IReadStationRepository stationRepos,
         IRedisProvider redis,
-        ILogger<GetStationName> logger,
         IMapper mapper)
     {
         _stationRepos = stationRepos;
         _redis = redis;
-        _logger = logger;
         _mapper = mapper;
     }
 
@@ -31,24 +27,15 @@ public class GetStationName : IService<StationNameDto>
     {
         var key = $"{GlobalKeysCacheConstants.Stations}:{id}";
 
-        var station = await _redis.GetAsync<StationEntity>(key, token);
+        var result = await _redis.GetOrSetAsync(
+            key,
+            () => _stationRepos.GetStationById(id, token),
+            token);
 
-        StationNameDto stationDto;
+        if (result.IsFailure)
+            return result.Error;
 
-        if (station is not null)
-        {
-            stationDto = _mapper.Map<StationNameDto>(station);
-            return stationDto;
-        }
-
-        var entityResult = await _stationRepos.GetStationById(id, token);
-
-        if (entityResult.IsFailure)
-            return entityResult.Error;
-
-        await _redis.SetAsync(key, entityResult.Value, token);
-
-        stationDto = _mapper.Map<StationNameDto>(entityResult.Value);
+        var stationDto = _mapper.Map<StationNameDto>(result.Value);
 
         return stationDto;
     }

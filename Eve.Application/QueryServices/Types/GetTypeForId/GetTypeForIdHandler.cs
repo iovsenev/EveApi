@@ -8,58 +8,46 @@ using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.DataBaseAccess.Read;
 using Eve.Domain.Interfaces.ExternalServices;
 using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Logging;
 
 namespace Eve.Application.QueryServices.Types.GetTypeForId;
 public class GetTypeForIdHandler : IRequestHandler<GetTypeForIdResponse, GetCommonRequestForId>
 {
-    private readonly IReadTypeReadRepository _repository;
+    private readonly IReadTypeRepository _repository;
     private readonly IRedisProvider _cacheProvider;
     private readonly IEveApiOpenClientProvider _apiProvider;
     private readonly IMapper _mapper;
-    private readonly ILogger<GetTypeForIdHandler> _logger;
     public GetTypeForIdHandler(
-        IReadTypeReadRepository repository,
+        IReadTypeRepository repository,
         IRedisProvider cacheProvider,
         IEveApiOpenClientProvider apiProvider,
-        IMapper mapper,
-        ILogger<GetTypeForIdHandler> logger)
+        IMapper mapper)
     {
         _repository = repository;
         _cacheProvider = cacheProvider;
         _apiProvider = apiProvider;
         _mapper = mapper;
-        _logger = logger;
     }
 
     public async Task<Result<GetTypeForIdResponse>> Handle(GetCommonRequestForId request, CancellationToken token)
     {
         var typeId = request.Id;
         var key = $"{GlobalKeysCacheConstants.Type}:{typeId}";
-        var type = await _cacheProvider.GetAsync<TypeInfoDto>(key, token);
 
-        if (type is null)
-        {
-            var result = await ReadTypeFromDatabase(typeId, token);
+        var result = await _cacheProvider.GetOrSetAsync(
+            key,
+            () => ReadTypeFromDatabase(typeId, token),
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpiration = DateTime.Now.AddMinutes(1)
+            },
+            token);
 
-            if (result.IsFailure)
-                return result.Error;
-
-            type = result.Value;
-
-            await _cacheProvider.SetAsync(
-                key,
-                type, new DistributedCacheEntryOptions
-                {
-                    AbsoluteExpiration = DateTime.Now.AddMinutes(1)
-                },
-                token
-            );
-        }
+        if (result.IsFailure)
+            return result.Error;
 
         double summPriceMaterials = 0;
 
-        foreach (var item in type.ReprocessComponents)
+        foreach (var item in result.Value.ReprocessComponents)
         {
             var price = await GetBestPrice(item.TypeId, token);
 
@@ -69,7 +57,7 @@ public class GetTypeForIdHandler : IRequestHandler<GetTypeForIdResponse, GetComm
             summPriceMaterials += price.Value;
         }
 
-        return new GetTypeForIdResponse(type, summPriceMaterials);
+        return new GetTypeForIdResponse(result.Value, summPriceMaterials);
     }
 
     private async Task<Result<TypeInfoDto>> ReadTypeFromDatabase(int typeId, CancellationToken token)
@@ -120,8 +108,6 @@ public class GetTypeForIdHandler : IRequestHandler<GetTypeForIdResponse, GetComm
             .Take(1)
             .FirstOrDefault();
 
-        return bestSellOrder == default
-            ? Error.InternalServer($"Not found orders for id: {typeId}")
-            : bestSellOrder;
+        return  bestSellOrder;
     }
 }

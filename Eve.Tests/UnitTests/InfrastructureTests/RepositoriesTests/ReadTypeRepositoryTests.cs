@@ -7,9 +7,9 @@ using FluentAssertions;
 
 namespace Eve.Tests.UnitTests.InfrastructureTests.RepositoriesTests;
 
-public class ReadTypeRepositoryTests : BaseReadRepositoryTest<IReadTypeReadRepository>
+public class ReadTypeRepositoryTests : BaseReadRepositoryTest<IReadTypeRepository>
 {
-    protected override IReadTypeReadRepository CreateRepository(IAppDbContext context)
+    protected override IReadTypeRepository CreateRepository(IAppDbContext context)
     {
         return new ReadTypeRepository(context);
     }

@@ -2,7 +2,7 @@
 using Eve.Domain.Entities;
 
 namespace Eve.Domain.Interfaces.DataBaseAccess.Read;
-public interface IReadTypeReadRepository 
+public interface IReadTypeRepository 
 {
     Task<Result<ICollection<ReprocessMaterialEntity>>> GetReprocessMaterialsForTypeId(int typeId, CancellationToken token);
     Task<Result<ICollection<TypeEntity>>> GetTypesByNameContains(string containedName, CancellationToken token);

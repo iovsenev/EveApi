@@ -5,7 +5,7 @@ using Eve.Infrastructure.DataBase.Contexts;
 using Microsoft.EntityFrameworkCore;
 
 namespace Eve.Infrastructure.DataBase.Repositories.Read;
-public class ReadTypeRepository : IReadTypeReadRepository
+public class ReadTypeRepository : IReadTypeRepository
 {
     private readonly IAppDbContext _context;
 

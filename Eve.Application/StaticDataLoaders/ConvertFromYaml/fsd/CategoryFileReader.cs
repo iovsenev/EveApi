@@ -2,7 +2,6 @@
 using Eve.Application.StaticDataLoaders.Common;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
-using System.Text.RegularExpressions;
 
 namespace Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd;
 public class CategoryFileReader

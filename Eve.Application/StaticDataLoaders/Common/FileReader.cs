@@ -6,25 +6,29 @@ using System.Diagnostics;
 namespace Eve.Application.StaticDataLoaders.Common;
 public class FileReader
 {
+    private readonly IFileSystem _fileSystem;
     private readonly ILogger<FileReader> _logger;
-    public FileReader(ILogger<FileReader> logger)
+    public FileReader(
+        IFileSystem fileSystem,
+        ILogger<FileReader> logger)
     {
+        _fileSystem = fileSystem;
         _logger = logger;
     }
 
     public async Task<Dictionary<int, Dictionary<string, object>>> ReadYamlFileFSD(string path)
     {
-        if (!File.Exists(path)){
+        if (!_fileSystem.Exists(path)){
             _logger.LogWarning($"File not exist for Path: {path}");
             throw new FileLoadException($"File on path: {path} does not exist");
         }
 
         _logger.LogInformation($"Start read file from path ${path}.");
 
-        var stopWatch = new Stopwatch();
+        var stopWatch = new Stopwatch();  
         stopWatch.Start();
 
-        var yamlContent = File.ReadAllText(path);
+        var yamlContent = _fileSystem.ReadAllText(path);
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
@@ -41,7 +45,7 @@ public class FileReader
 
     public async Task<List<Dictionary<string, object>>> ReadYamlFileBSD(string path)
     {
-        if (!File.Exists(path))
+        if (!_fileSystem.Exists(path))
         {
             _logger.LogWarning($"File not exist for Path: {path}");
             throw new FileLoadException($"File on path: {path} does not exist");
@@ -52,7 +56,7 @@ public class FileReader
         var stopWatch = new Stopwatch();
         stopWatch.Start();
 
-        var yamlContent = File.ReadAllText(path);
+        var yamlContent = _fileSystem.ReadAllText(path);
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)
@@ -70,13 +74,13 @@ public class FileReader
 
     public async Task<Dictionary<string, object>> ReadYamlFileUniverse(string path)
     {
-        if (!File.Exists(path))
+        if (!_fileSystem.Exists(path))
         {
             _logger.LogWarning($"File not exist for Path: {path}");
             throw new FileLoadException($"File on path: {path} does not exist");
         }
 
-        var yamlContent = File.ReadAllText(path);
+        var yamlContent = _fileSystem.ReadAllText(path);
 
         var deserializer = new DeserializerBuilder()
             .WithNamingConvention(CamelCaseNamingConvention.Instance)

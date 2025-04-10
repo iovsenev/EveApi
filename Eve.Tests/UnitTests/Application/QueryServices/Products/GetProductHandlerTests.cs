@@ -40,40 +40,36 @@ public class GetProductHandlerTests
         _apiClient = new();
         _handler = new(_repository.Object, _cacheProvider.Object, _mapper.Object, _apiClient.Object);
         _materials = GetMaterials();
+        SetMapperMock();
     }
 
     [Fact]
     public async Task Handle_ReturnSuccess_WhenAllReturnsSuccess()
     {
         //arrange
-        _repository
-            .Setup(c => c.GetProductForId(
-                It.IsAny<int>(),
-                CancellationToken.None))
-            .ReturnsAsync(_product);
+        Set_GetMaterialsForProductId(true);
+        Set_GetProductForId(true);
+        SetCacheProviderMock(true);
 
-        _repository
-            .Setup(c => c.GetMaterialsForProductId(It.IsAny<int>(), CancellationToken.None))
-            .ReturnsAsync(_materials);
+        //act
 
-        _mapper
-            .Setup(c => c.Map<ProductDto>(It.IsAny<ProductEntity>()))
-            .Returns((ProductEntity source) => new ProductDto
-            {
-                BlueprintId = source.BlueprintId,
-                Id = source.Id,
-                Quantity = source.Quantity,
-                Time = source.Time,
-            });
+        var result = await _handler.Handle(new(1, 1, 1), CancellationToken.None);
+        //assert
 
-        _mapper
-            .Setup(c => c.Map<MaterialDto>(It.IsAny<ProductMaterialEntity>()))
-            .Returns((ProductMaterialEntity source) => new MaterialDto
-            {
-                Name = "name",
-                Quantity = source.Quantity,
-                TypeId = source.TypeId
-            });
+        result.IsSuccess.Should().BeTrue();
+        result.Value.SellPrice.Should().Be(3.0);
+        result.Value.BuyPrice.Should().Be(6.0);
+        result.Value.SellPriceMaterials.Should().Be(3.0 * _materials.Count * 20);
+        result.Value.BuyPriceMaterials.Should().Be(6.0 * _materials.Count * 20);
+    }
+
+    [Fact]
+    public async Task Handle_ReturnSuccess_WhenReturnsEmptyOrders()
+    {
+        //arrange
+        Set_GetMaterialsForProductId(true);
+        Set_GetProductForId(true);
+        SetCacheProviderMock(true);
 
         _cacheProvider
             .Setup(c => c.GetOrSetAsync(
@@ -81,29 +77,69 @@ public class GetProductHandlerTests
                 It.IsAny<Func<Task<Result<ICollection<TypeOrdersInfo>>>>>(),
                 It.IsAny<DistributedCacheEntryOptions>(),
                 It.IsAny<CancellationToken>()))
-            .ReturnsAsync(DataStorage.GetOrders());
+            .ReturnsAsync(new List<TypeOrdersInfo>());
 
-        _cacheProvider
-            .Setup(c => c.GetOrSetAsync(
-                It.IsAny<string>(),
-                It.IsAny<Func<Task<Result<ProductDto>>>>(),
-                It.IsAny<DistributedCacheEntryOptions>(),
-                It.IsAny<CancellationToken>()))
-            .Returns(
-                async (string key,
-                Func<Task<Result<ProductDto>>> factory,
-                DistributedCacheEntryOptions _,
-                CancellationToken _) =>
-                {
-                    return await factory(); 
-                }
-            );
         //act
 
         var result = await _handler.Handle(new(1, 1, 1), CancellationToken.None);
         //assert
 
         result.IsSuccess.Should().BeTrue();
+        result.Value.SellPrice.Should().Be(0);
+        result.Value.BuyPrice.Should().Be(0);
+        result.Value.SellPriceMaterials.Should().Be(0 * _materials.Count * 20);
+        result.Value.BuyPriceMaterials.Should().Be(0 * _materials.Count * 20);
+    }
+
+    [Fact]
+    public async Task Handle_ReturnError_WhenReturnsProductWithError()
+    {
+        //arrange
+        Set_GetMaterialsForProductId(true);
+        Set_GetProductForId(false);
+        SetCacheProviderMock(true);
+
+        //act
+
+        var result = await _handler.Handle(new(1, 1, 1), CancellationToken.None);
+        //assert
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.ErrorCode.Should().Be(ErrorCodes.InternalServer);
+    }
+
+    [Fact]
+    public async Task Handle_ReturnError_WhenReturnsMaterialsWithError()
+    {
+        //arrange
+        Set_GetMaterialsForProductId(false);
+        Set_GetProductForId(true);
+        SetCacheProviderMock(true);
+
+        //act
+
+        var result = await _handler.Handle(new(1, 1, 1), CancellationToken.None);
+        //assert
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.ErrorCode.Should().Be(ErrorCodes.InternalServer);
+    }
+
+    [Fact]
+    public async Task Handle_ReturnError_WhenReturnsCacheProviderWithError()
+    {
+        //arrange
+        Set_GetMaterialsForProductId(true);
+        Set_GetProductForId(true);
+        SetCacheProviderMock(false);
+
+        //act
+
+        var result = await _handler.Handle(new(1, 1, 1), CancellationToken.None);
+        //assert
+
+        result.IsSuccess.Should().BeFalse();
+        result.Error.ErrorCode.Should().Be(ErrorCodes.InternalServer);
     }
 
     private List<ProductMaterialEntity> GetMaterials()
@@ -160,6 +196,119 @@ public class GetProductHandlerTests
             },
         };
         return materials;
+    }
+
+    private List<TypeOrdersInfo> GetOrders()
+    {
+        var orders = new List<TypeOrdersInfo>();
+
+        for (int i = 1; i <= 8; i++)
+        {
+            orders.Add(new TypeOrdersInfo
+            {
+                IsBuyOrder = i % 2 == 0,
+                OrderId = i,
+                Price = i,
+            });
+        }
+        return orders;
+    }
+
+    private void SetCacheProviderMock(bool isReturnSuccess)
+    {
+        _cacheProvider
+            .Setup(c => c.GetOrSetAsync(
+                It.IsAny<string>(),
+                It.IsAny<Func<Task<Result<ProductDto>>>>(),
+                It.IsAny<DistributedCacheEntryOptions>(),
+                It.IsAny<CancellationToken>()))
+            .Returns(
+                async (string key,
+                Func<Task<Result<ProductDto>>> factory,
+                DistributedCacheEntryOptions _,
+                CancellationToken _) =>
+                {
+                    return await factory();
+                }
+            );
+
+        if (isReturnSuccess)
+        {
+            _cacheProvider
+            .Setup(c => c.GetOrSetAsync(
+                It.IsAny<string>(),
+                It.IsAny<Func<Task<Result<ICollection<TypeOrdersInfo>>>>>(),
+                It.IsAny<DistributedCacheEntryOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(GetOrders());
+        }
+        else
+        {
+            _cacheProvider
+            .Setup(c => c.GetOrSetAsync(
+                It.IsAny<string>(),
+                It.IsAny<Func<Task<Result<ICollection<TypeOrdersInfo>>>>>(),
+                It.IsAny<DistributedCacheEntryOptions>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Error.InternalServer());
+        }
+    }
+
+    private void SetMapperMock()
+    {
+        _mapper
+            .Setup(c => c.Map<ProductDto>(It.IsAny<ProductEntity>()))
+            .Returns((ProductEntity source) => new ProductDto
+            {
+                BlueprintId = source.BlueprintId,
+                Id = source.Id,
+                Quantity = source.Quantity,
+                Time = source.Time,
+            });
+
+        _mapper
+            .Setup(c => c.Map<MaterialDto>(It.IsAny<ProductMaterialEntity>()))
+            .Returns((ProductMaterialEntity source) => new MaterialDto
+            {
+                Name = "name",
+                Quantity = source.Quantity,
+                TypeId = source.TypeId
+            });
+    }
+
+    private void Set_GetProductForId(bool isReturnSuccess)
+    {
+        if (isReturnSuccess) {
+            _repository
+            .Setup(c => c.GetProductForId(
+                It.IsAny<int>(),
+                CancellationToken.None))
+            .ReturnsAsync(_product);
+        }
+        else
+        {
+            _repository
+           .Setup(c => c.GetProductForId(
+               It.IsAny<int>(),
+               CancellationToken.None))
+           .ReturnsAsync(Error.InternalServer());
+        }
+    }
+
+    private void Set_GetMaterialsForProductId(bool isReturnSuccess)
+    {
+        if (isReturnSuccess)
+        {
+            _repository
+            .Setup(c => c.GetMaterialsForProductId(It.IsAny<int>(), CancellationToken.None))
+            .ReturnsAsync(_materials);
+        }
+        else
+        {
+            _repository
+            .Setup(c => c.GetMaterialsForProductId(It.IsAny<int>(), CancellationToken.None))
+            .ReturnsAsync(Error.InternalServer());
+        }
     }
 
 }

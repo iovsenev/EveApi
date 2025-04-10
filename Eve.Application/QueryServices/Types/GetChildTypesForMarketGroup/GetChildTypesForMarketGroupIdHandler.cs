@@ -14,19 +14,13 @@ public class GetChildTypesForMarketGroupIdHandler : IRequestHandler<GetChildType
 {
     private readonly IReadMarketGroupRepository _repos;
     private readonly IMapper _mapper;
-    private readonly IRedisProvider _redisCache;
-    private readonly ILogger<GetChildTypesForMarketGroupIdHandler> _logger;
 
     public GetChildTypesForMarketGroupIdHandler(
         IReadMarketGroupRepository repos,
-        IMapper mapper,
-        IRedisProvider redisCache,
-        ILogger<GetChildTypesForMarketGroupIdHandler> logger)
+        IMapper mapper)
     {
         _repos = repos;
         _mapper = mapper;
-        _redisCache = redisCache;
-        _logger = logger;
     }
 
     public async Task<Result<GetChildTypesResponse>> Handle(GetCommonRequestForId request, CancellationToken token)

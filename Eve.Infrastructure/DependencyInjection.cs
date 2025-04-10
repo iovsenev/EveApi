@@ -26,11 +26,11 @@ public static class DependencyInjection
 
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        services.AddScoped<IReadCategoryRepository, ReadCategoryRepository>();
+        services.AddScoped<Domain.Interfaces.DataBaseAccess.Read.IReadCategoryRepository, ReadCategoryRepository>();
         services.AddScoped<IReadRegionRepository, ReadRegionRepository>();
         services.AddScoped<ILoadRepository, LoadRepository>();
         services.AddScoped<IReadMarketGroupRepository, ReadMarketGroupRepository>();
-        services.AddScoped<IReadTypeReadRepository, ReadTypeRepository>();
+        services.AddScoped<IReadTypeRepository, ReadTypeRepository>();
         services.AddScoped<IReadProductRepository, ReadProductRepository>();
         services.AddScoped<IReadStationRepository, ReadStationRepository>();
         services.AddScoped<IReadGroupRepository, ReadGroupRepository>();
