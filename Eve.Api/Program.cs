@@ -2,7 +2,8 @@ using Eve.Infrastructure;
 using Eve.Application;
 using Eve.Api.Minddlewares;
 using Eve.Api;
-using Eve.Api.BackgroundServices;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
@@ -10,7 +11,7 @@ var configuration = builder.Configuration;
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.ConfigureSwagger();
 
 builder.Services.AddLogging(builder =>
 {
@@ -46,7 +47,10 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+    });
 }
 using var scope = app.Services.CreateScope();
 var service = scope.ServiceProvider.GetRequiredService<AdminAdder>();

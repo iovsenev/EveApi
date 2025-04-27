@@ -6,11 +6,11 @@ using System.Diagnostics;
 namespace Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd;
 public class IconFileReader
 {
-    private readonly FileReader _reader;
+    private readonly IFileReader _reader;
     private readonly ILogger<IconFileReader> _logger;
 
     public IconFileReader(
-        FileReader reader, 
+            IFileReader reader, 
         ILogger<IconFileReader> logger)
     {
         _reader = reader;

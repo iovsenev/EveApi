@@ -6,11 +6,11 @@ using System.Diagnostics;
 namespace Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd;
 public class ReprocessMaterialsFileReader
 {
-    private readonly FileReader _reader;
+    private readonly IFileReader _reader;
     private readonly ILogger<ReprocessMaterialEntity> _logger;
 
     public ReprocessMaterialsFileReader(
-        FileReader reader, 
+        IFileReader reader, 
         ILogger<ReprocessMaterialEntity> logger)
     {
         _reader = reader;

@@ -10,10 +10,10 @@ using System.Security.Claims;
 
 namespace Eve.Api.Controllers;
 [Authorize]
+[Route("admin")]
 public class AdminController : BaseController
 {
     private readonly IConfiguration _config;
-
     public AdminController(IConfiguration config)
     {
         _config = config;
@@ -38,17 +38,6 @@ public class AdminController : BaseController
         return Ok(new { message = "loaded" });
     }
 
-    [HttpGet("orders2")]
-    public async Task<IActionResult> LoadOrders2([FromServices] ILoadOrdersService loader, CancellationToken token)
-    {
-
-        var result = await loader.RunTaskAsync(token);
-        if (!result)
-            return BadRequest(new { message = "not loaded" });
-
-        return Ok(new { message = "loaded" });
-    }
-
     [HttpGet("authTest")]
     public async Task<IActionResult> TestAuth()
     {
@@ -63,7 +52,7 @@ public class AdminController : BaseController
         });
     }
 
-    [HttpGet("start")]
+    [HttpGet("authorizebot")]
     public async Task<IActionResult> AuthorizeBot()
     {
 

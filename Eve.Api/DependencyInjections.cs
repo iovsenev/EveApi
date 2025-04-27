@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
+using System.Reflection;
 using System.Text;
 
 namespace Eve.Api;
@@ -55,6 +57,53 @@ public static class DependencyInjections
 
         services.AddAuthorization();
 
+        return services;
+    }
+
+    public static IServiceCollection ConfigureSwagger(this IServiceCollection services)
+    {
+        services.AddSwaggerGen(c => {
+            c.SwaggerDoc("v1", new OpenApiInfo
+            {
+                Title = "Eve api",
+                Version = "v1",
+                Description = "for eve site",
+                Contact = new OpenApiContact
+                {
+                    Name = "ilya",
+                    Email = "ovsenev.ilya@yandex.ru"
+                }
+            });
+            var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+            var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+            c.IncludeXmlComments(xmlPath);
+
+            c.AddSecurityDefinition("X-Client-Id", new OpenApiSecurityScheme
+            {
+                Name = "X-Client-Id",
+                Type = SecuritySchemeType.ApiKey,
+                In = ParameterLocation.Header,
+                Description = "!!!!Обязательно!!!!. Уникальный идентификатор клиента",
+                Scheme = "apiKey"
+            });
+
+            c.AddSecurityRequirement(new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.SecurityScheme,
+                            Id = "X-Client-Id"
+                        },
+                        Name = "X-Client-Id",
+                        In = ParameterLocation.Header,
+                    },
+                    new List<string>()
+                }
+            });
+        });
         return services;
     }
 }

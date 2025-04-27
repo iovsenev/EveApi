@@ -8,12 +8,12 @@ namespace Eve.Application.StaticDataLoaders.ConvertFromYaml.bsd;
 
 public class StationFileReader
 {
-    private readonly FileReader _reader;
+    private readonly IFileReader _reader;
     private readonly ILogger<StationFileReader> _logger;
 
 
     public StationFileReader(
-        FileReader reader,
+        IFileReader reader,
         ILogger<StationFileReader> logger)
     {
         _reader = reader;
@@ -44,7 +44,7 @@ public class StationFileReader
             typeEntity.Id = Convert.ToInt32(entry["stationID"]);
             typeEntity.Name = entry["stationName"].ToString();
             typeEntity.CorporationId = entry.ContainsKey("corporationID")
-                ? Convert.ToInt32(entry["stationID"])
+                ? Convert.ToInt32(entry["corporationID"])
                 : null;
             typeEntity.DockingCostPerVolume = entry.ContainsKey("dockingCostPerVolume")
                 ? float.Parse(entry["dockingCostPerVolume"].ToString(), CultureInfo.InvariantCulture)

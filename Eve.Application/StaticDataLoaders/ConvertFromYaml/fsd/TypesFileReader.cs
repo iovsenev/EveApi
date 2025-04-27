@@ -7,11 +7,11 @@ using Microsoft.Extensions.Logging;
 namespace Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd;
 public class TypesFileReader
 {
-    private readonly FileReader _reader;
+    private readonly IFileReader _reader;
     private readonly ILogger<TypesFileReader> _logger;
 
     public TypesFileReader(
-        FileReader reader, 
+        IFileReader reader, 
         ILogger<TypesFileReader> logger)
     {
         _reader = reader;

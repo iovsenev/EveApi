@@ -7,10 +7,10 @@ using System.Diagnostics;
 namespace Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd.Blueprints;
 public class BlueprintsFileReader
 {
-    private readonly FileReader _reader;
+    private readonly IFileReader _reader;
     private readonly ILogger<BlueprintsFileReader> _logger;
     public BlueprintsFileReader(
-        FileReader reader, 
+        IFileReader reader, 
         ILogger<BlueprintsFileReader> logger)
     {
         _reader = reader;

@@ -6,12 +6,12 @@ using System.Diagnostics;
 namespace Eve.Application.StaticDataLoaders.ConvertFromYaml.bsd;
 public class NamesFileReader
 {
-    private readonly FileReader _reader;
+    private readonly IFileReader _reader;
     private readonly ILogger<NamesFileReader> _logger;
 
 
     public NamesFileReader(
-        FileReader reader, 
+        IFileReader reader, 
         ILogger<NamesFileReader> logger)
     {
         _reader = reader;

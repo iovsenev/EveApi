@@ -6,11 +6,11 @@ using System.Diagnostics;
 namespace Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd;
 public class MarketGroupFileReader
 {
-    private readonly FileReader _reader;
+    private readonly IFileReader _reader;
     private readonly ILogger<MarketGroupFileReader> _logger;
 
     public MarketGroupFileReader(
-        FileReader reader,
+        IFileReader reader,
         ILogger<MarketGroupFileReader> logger)
     {
         _reader = reader;

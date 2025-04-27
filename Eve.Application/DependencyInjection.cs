@@ -13,7 +13,6 @@ using Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd;
 using Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd.Blueprints;
 using Eve.Application.StaticDataLoaders.ConvertFromYaml.Universe;
 using Eve.Domain.Interfaces.ApiServices;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
@@ -49,7 +48,7 @@ public static class DependencyInjection
         services.AddScoped<IconFileReader>();
         services.AddScoped<StationFileReader>();
 
-        services.AddScoped<FileReader>();
+        services.AddScoped<IFileReader, FileReader>();
 
         services.AddRequestHandlers(typeof(GetChildTypesForMarketGroupIdHandler));
 

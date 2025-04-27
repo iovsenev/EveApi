@@ -13,11 +13,11 @@ public class UniverseFileReader
     private readonly ConcurrentBag<ConstellationEntity> _constellations = new();
     private readonly ConcurrentBag<SolarSystemEntity> _systems = new();
 
-    private readonly FileReader _reader;
+    private readonly IFileReader _reader;
     private readonly ILogger<UniverseFileReader> _logger;
     private volatile bool _initialized = false;
 
-    public UniverseFileReader(FileReader reader, ILogger<UniverseFileReader> logger)
+    public UniverseFileReader(IFileReader reader, ILogger<UniverseFileReader> logger)
     {
         _reader = reader;
         _logger = logger;
@@ -48,7 +48,6 @@ public class UniverseFileReader
     {
         var directories = Directory.EnumerateDirectories(path).ToList();
 
-        // Параллельная обработка вложенных папок
         var tasks = directories.AsParallel().Select(async directory =>
         {
             if (File.Exists(Path.Combine(directory, "region.yaml")))

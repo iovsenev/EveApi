@@ -7,11 +7,11 @@ namespace Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd;
 
 public class GroupFileReader
 {
-    private readonly FileReader _reader;
+    private readonly IFileReader _reader;
     private readonly ILogger<GroupFileReader> _logger;
 
     public GroupFileReader(
-        FileReader reader,
+        IFileReader reader,
         ILogger<GroupFileReader> logger)
     {
         _reader = reader;

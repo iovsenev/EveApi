@@ -4,6 +4,7 @@ using Eve.Application.InternalServices.TokenService;
 
 namespace Eve.Api.Controllers;
 
+[ApiExplorerSettings(IgnoreApi = true)]
 [Route("callback")]
 public class CallbackController : BaseController
 {

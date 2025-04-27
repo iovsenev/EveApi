@@ -4,10 +4,11 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
 namespace Eve.Application.StaticDataLoaders.Common;
-public class FileReader
+public class FileReader : IFileReader
 {
     private readonly IFileSystem _fileSystem;
     private readonly ILogger<FileReader> _logger;
+
     public FileReader(
         IFileSystem fileSystem,
         ILogger<FileReader> logger)
@@ -18,14 +19,15 @@ public class FileReader
 
     public async Task<Dictionary<int, Dictionary<string, object>>> ReadYamlFileFSD(string path)
     {
-        if (!_fileSystem.Exists(path)){
+        if (!_fileSystem.Exists(path))
+        {
             _logger.LogWarning($"File not exist for Path: {path}");
             throw new FileLoadException($"File on path: {path} does not exist");
         }
 
         _logger.LogInformation($"Start read file from path ${path}.");
 
-        var stopWatch = new Stopwatch();  
+        var stopWatch = new Stopwatch();
         stopWatch.Start();
 
         var yamlContent = _fileSystem.ReadAllText(path);

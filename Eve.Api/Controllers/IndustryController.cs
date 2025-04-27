@@ -31,10 +31,12 @@ public class IndustryController : BaseController
     {
         var key = $"{HttpContext.Request.Path.Value}";
 
-        var result = await _redisProvider.GetOrSetAsync(
-            key,
-            () => _handler.Send<GetCategoriesResponse>(new GetCommonEmptyRequest(), token),
-            token);
+        //var result = await _redisProvider.GetOrSetAsync(
+        //    key,
+        //    () => _handler.Send<GetCategoriesResponse>(new GetCommonEmptyRequest(), token),
+        //    token);
+
+        var result = await _handler.Send<GetCategoriesResponse>(new GetCommonEmptyRequest(), token);
 
         if (result.IsFailure)
             return StatusCode((int)result.Error.ErrorCode, result.Error);
@@ -62,10 +64,10 @@ public class IndustryController : BaseController
     public async Task<IActionResult> GetTypesIsProductForGroupId(int groupId, CancellationToken token)
     {
         var key = $"{HttpContext.Request.Path.Value}";
-        var response = await _redisProvider.GetAsync<GetChildTypesProductResponse>(key, token);
+        //var response = await _redisProvider.GetAsync<GetChildTypesProductResponse>(key, token);
 
-        if (response is not null)
-            return Ok(response);
+        //if (response is not null)
+        //    return Ok(response);
 
         var result = await _handler.Send<GetChildTypesProductResponse>(new GetCommonRequestForId(groupId), token);
 
