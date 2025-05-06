@@ -7,6 +7,8 @@ using Eve.Infrastructure.DataBase.Contexts;
 using Eve.Infrastructure.DataBase.Repositories.Read;
 using Eve.Infrastructure.DataBase.Repositories.Write;
 using Eve.Infrastructure.ExternalServices;
+using Eve.Infrastructure.ExternalServices.Base;
+using Eve.Infrastructure.ExternalServices.Interfaces;
 using Eve.Infrastructure.Redis;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -26,7 +28,7 @@ public static class DependencyInjection
 
     private static IServiceCollection AddRepositories(this IServiceCollection services)
     {
-        services.AddScoped<Domain.Interfaces.DataBaseAccess.Read.IReadCategoryRepository, ReadCategoryRepository>();
+        services.AddScoped<IReadCategoryRepository, ReadCategoryRepository>();
         services.AddScoped<IReadRegionRepository, ReadRegionRepository>();
         services.AddScoped<ILoadRepository, LoadRepository>();
         services.AddScoped<IReadMarketGroupRepository, ReadMarketGroupRepository>();
@@ -62,6 +64,7 @@ public static class DependencyInjection
     private static IServiceCollection AddProviders(this IServiceCollection services)
     {
         services.AddSingleton<IEveGlobalRateLimit, EveGlobalRateLimit>();
+        services.AddScoped<IEveRetryPolicyProvider, EveRetryPolicyProvider>();
 
         services.AddHttpClient<IEveApiOpenClientProvider, EveApiClientProvider>(client =>
         {
@@ -72,6 +75,13 @@ public static class DependencyInjection
         {
             client.BaseAddress = new Uri(EveConstants.BaseUrlEsi);
         });
+
+        services.AddHttpClient<IEveApiMarketProvider, EveApiMarketProvider>(client =>
+        {
+            client.BaseAddress = new Uri(EveConstants.BaseUrlEsi);
+        });
+
+
 
         services.AddSingleton<IRedisProvider, RedisProvider>();
 

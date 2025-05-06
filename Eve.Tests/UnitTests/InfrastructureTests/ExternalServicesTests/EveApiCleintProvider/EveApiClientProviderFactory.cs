@@ -1,5 +1,6 @@
 ﻿using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Infrastructure.ExternalServices;
+using Eve.Infrastructure.ExternalServices.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;

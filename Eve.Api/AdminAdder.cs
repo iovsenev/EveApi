@@ -10,7 +10,10 @@ public class AdminAdder
     private readonly AppIdentityDbContext _context;
     private readonly IConfiguration _config;
 
-    public AdminAdder(UserManager<IdentityUser> manager, AppIdentityDbContext context, IConfiguration config)
+    public AdminAdder(
+        UserManager<IdentityUser> manager, 
+        AppIdentityDbContext context, 
+        IConfiguration config)
     {
         _manager = manager;
         _context = context;

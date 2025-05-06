@@ -1,9 +1,9 @@
 ﻿using Eve.Api.Controllers.Common;
+using Eve.Application.AuthServices.EsiAuth;
 using Eve.Application.InternalServices;
 using Eve.Application.StaticDataLoaders;
 using Eve.Domain.Constants;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -14,9 +14,11 @@ namespace Eve.Api.Controllers;
 public class AdminController : BaseController
 {
     private readonly IConfiguration _config;
-    public AdminController(IConfiguration config)
+    private readonly EsiAuthentication _esiAuth;
+    public AdminController(IConfiguration config, EsiAuthentication esiAuth)
     {
         _config = config;
+        _esiAuth = esiAuth;
     }
 
     [HttpGet ("initialdatabase")]
@@ -56,17 +58,17 @@ public class AdminController : BaseController
     public async Task<IActionResult> AuthorizeBot()
     {
 
-        var redirectUri = "http://localhost:5000/callback";
+        var redirectUri = _config["ESI:RedirectUrl"]; 
         var clientId = _config["ESI:ClientId"];
         var adminState = _config["ESI:AdminState"];
 
-        var authUrl = $"https://login.eveonline.com/v2/oauth/authorize" +
-                      $"?response_type=code&redirect_uri={Uri.EscapeDataString(redirectUri)}" +
-                      $"&client_id={clientId}&scope={Uri.EscapeDataString(EsiScopes.Universe_ReadStructure)}" +
-                      $"&state={adminState}";
+        var result = _esiAuth.GetAuthUrl("http://localhost:3000/admin", adminState);
 
-        return Ok(new { url = authUrl });
+        if (result.IsFailure)
+        {
+            return BadRequest();
+        }
+
+        return Ok(new { url = result.Value });
     }
-
-    
 }

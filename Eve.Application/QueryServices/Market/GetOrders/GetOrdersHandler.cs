@@ -6,18 +6,19 @@ using Eve.Domain.Constants;
 using Eve.Domain.Interfaces.ApiServices;
 using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.ExternalServices;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Eve.Application.QueryServices.Market.GetOrders;
 public class GetOrdersHandler : IRequestHandler<GetOrdersResponse, GetOrdersRequest>
 {
     private readonly IRedisProvider _cacheProvider;
-    private readonly IEveApiOpenClientProvider _apiClient;
+    private readonly IEveApiMarketProvider _apiClient;
     private readonly IMapper _mapper;
     private readonly IService<StationNameDto> _stationName;
 
     public GetOrdersHandler(
         IRedisProvider cacheProvider,
-        IEveApiOpenClientProvider apiClient,
+        IEveApiMarketProvider apiClient,
         IMapper mapper,
         IService<StationNameDto> stationName)
     {
@@ -33,7 +34,14 @@ public class GetOrdersHandler : IRequestHandler<GetOrdersResponse, GetOrdersRequ
 
         var result = await _cacheProvider.GetOrSetAsync(
             key,
-            () => _apiClient.FetchOrdersForTypeIdAsync(request.RegionId, request.TypeId, token),
+            () => _apiClient.GetOrdersForRegionAsync(
+                request.RegionId,
+                token,
+                typeId: request.TypeId),
+            new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(5)
+            },
             token);
 
         if (result.IsFailure)
@@ -46,10 +54,13 @@ public class GetOrdersHandler : IRequestHandler<GetOrdersResponse, GetOrdersRequ
         {
             var stationName = await _stationName.Handle(orderEntity.LocationId, token);
             var order = _mapper.Map<TypeOrderDto>(orderEntity);
+            if (stationName.IsFailure)
+                Console.WriteLine($"======={orderEntity.LocationId} ========");
             order.StationName = stationName.IsSuccess
                 ? stationName.Value.Name
                 : "unknown";
             orders.Add(order);
+
         }
 
         var response = GetResponse(

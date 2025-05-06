@@ -12,13 +12,13 @@ namespace Eve.Tests.UnitTests.Application.QueryServices.Market;
 public class GetMarketHistoryHandlerTests
 {
     private readonly Mock<IRedisProvider> _cacheProvider;
-    private readonly Mock<IEveApiOpenClientProvider> _apiClientProvider;
+    private readonly Mock<IEveApiMarketProvider> _apiClientProvider;
     private readonly GetMarketHistoryHandler _handler;
 
     public GetMarketHistoryHandlerTests()
     {
         _cacheProvider = new Mock<IRedisProvider>();
-        _apiClientProvider = new Mock<IEveApiOpenClientProvider>();
+        _apiClientProvider = new Mock<IEveApiMarketProvider>();
         _handler = new(_cacheProvider.Object, _apiClientProvider.Object);
     }
 

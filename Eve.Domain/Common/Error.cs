@@ -45,6 +45,24 @@ public class Error
         return new(message, ErrorCodes.NotModified);
     }
 
+    public static Error Cancelled (string? message= null)
+    {
+        message = message ?? "Client closed request";
+        return new(message, ErrorCodes.ClientClosedRequest);
+    }
+
+    public static Error Unauthorized(string? message = null)
+    {
+        message = message ?? "Not authorized";
+        return new(message, ErrorCodes.Unauthorized);
+    }
+
+    public static Error TooManyRequests(string? message = null)
+    {
+        message = message ?? "Too Many Requests";
+        return new(message, ErrorCodes.TooManyRequests);
+    }
+
     public override bool Equals(object? obj)
     {
         if (obj is not Error) return false;
@@ -63,8 +81,11 @@ public enum ErrorCodes
     Empty = 0,
     NotModified = 304,
     BadRequest = 400,
+    Unauthorized = 401,
     Forbidden = 403,
     NotFound = 404,
+    TooManyRequests = 429,
+    ClientClosedRequest = 499,
     InternalServer = 500,
 }
 

@@ -1,4 +1,4 @@
-﻿using Eve.Infrastructure.ExternalServices;
+﻿using Eve.Infrastructure.ExternalServices.Base;
 using System.Diagnostics;
 
 namespace Eve.Tests.UnitTests.InfrastructureTests.ExternalServicesTests;

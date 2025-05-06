@@ -5,17 +5,16 @@ using Eve.Domain.Interfaces.ApiServices;
 using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.ExternalServices;
 using Microsoft.Extensions.Caching.Distributed;
-using Microsoft.Extensions.Logging;
 
 namespace Eve.Application.QueryServices.Market.GetMarketHistory;
 public class GetMarketHistoryHandler : IRequestHandler<GetMarketHistoryResponse, GetMarketHistoryRequest>
 {
     private readonly IRedisProvider _cacheProvider;
-    private readonly IEveApiOpenClientProvider _apiClientProvider;
+    private readonly IEveApiMarketProvider _apiClientProvider;
 
     public GetMarketHistoryHandler(
         IRedisProvider cacheProvider,
-        IEveApiOpenClientProvider apiClientProvider)
+        IEveApiMarketProvider apiClientProvider)
     {
         _cacheProvider = cacheProvider;
         _apiClientProvider = apiClientProvider;
@@ -27,13 +26,13 @@ public class GetMarketHistoryHandler : IRequestHandler<GetMarketHistoryResponse,
 
         var result = await _cacheProvider.GetOrSetAsync(
             key,
-            () => _apiClientProvider.FetchMarketHistoryForTypeIdAsync(
-                typeId: request.TypeId,
+            () => _apiClientProvider.GetMarketHistoryAsync(
                 regionId: request.RegionId,
+                typeId: request.TypeId,
                 token),
             new DistributedCacheEntryOptions
             {
-                AbsoluteExpiration = DateTime.Today.AddDays(1)
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(1)
             },
             token);
 

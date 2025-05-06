@@ -14,7 +14,7 @@ namespace Eve.Tests.UnitTests.Application.QueryServices.Market;
 public class GetOrdersHandlerTests
 {
     private readonly Mock<IRedisProvider> _cacheProvider;
-    private readonly Mock<IEveApiOpenClientProvider> _apiClient;
+    private readonly Mock<IEveApiMarketProvider> _apiClient;
     private readonly Mock<IMapper> _mapper;
     private readonly Mock<IService<StationNameDto>> _stationName;
     private readonly GetOrdersHandler _handler;

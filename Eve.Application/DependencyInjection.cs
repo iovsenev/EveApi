@@ -1,7 +1,8 @@
 ﻿using Eve.Application.AuthServices.AuthTokenService;
+using Eve.Application.AuthServices.Cryptography;
+using Eve.Application.AuthServices.EsiAuth;
 using Eve.Application.DTOs;
 using Eve.Application.InternalServices;
-using Eve.Application.InternalServices.TokenService;
 using Eve.Application.Mapping;
 using Eve.Application.QueryServices;
 using Eve.Application.QueryServices.Stations.GetStations;
@@ -13,28 +14,29 @@ using Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd;
 using Eve.Application.StaticDataLoaders.ConvertFromYaml.fsd.Blueprints;
 using Eve.Application.StaticDataLoaders.ConvertFromYaml.Universe;
 using Eve.Domain.Interfaces.ApiServices;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System.Reflection;
 
 namespace Eve.Application;
 public static class DependencyInjection
 {
-    public static IServiceCollection AddApplication(this IServiceCollection services)
+    public static IServiceCollection AddApplication(this IServiceCollection services, IConfiguration config)
     {
-        AddServices(services);
+        AddServices(services, config);
 
         services.AddAutoMapper(typeof(MarketProfile));
 
         return services;
     }
 
-    private static void AddServices(IServiceCollection services)
+    private static void AddServices(IServiceCollection services, IConfiguration config)
     {
         services.AddScoped<EveSsoJwtValidator>();
+        services.AddScoped<EsiAuthentication>();
 
         services.AddScoped<EntityLoader>();
         services.AddScoped<ILoadOrdersService,LoadOrdersService>();
-        services.AddScoped<IEsiTokenService,EsiTokenService>();
         services.AddScoped<IFileSystem, FileSystem>();
 
         services.AddScoped<TypesFileReader>();
@@ -54,6 +56,12 @@ public static class DependencyInjection
 
         services.AddScoped<IService<StationNameDto>, GetStationName>();
         services.AddScoped<ITokenService, TokenService>();
+
+        services.AddSingleton(sp =>
+        {
+            var secret = config["Encryption:SecretKey"];
+            return new EncryptionService(secret);
+        });
     }
 
     private static IServiceCollection AddRequestHandlers(this IServiceCollection services, Type assemblyType)

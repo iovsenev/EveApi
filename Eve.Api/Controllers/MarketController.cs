@@ -11,12 +11,12 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Eve.Api.Controllers;
 
-public class MarketGroupsController : BaseController
+public class MarketController : BaseController
 {
     private readonly IQueryHandler _handler;
     private readonly IRedisProvider _redisProvider;
 
-    public MarketGroupsController(IQueryHandler handler,
+    public MarketController(IQueryHandler handler,
         IRedisProvider redisProvider)
     {
         _handler = handler;
@@ -27,21 +27,9 @@ public class MarketGroupsController : BaseController
     public async Task<IActionResult> GetAll(
         CancellationToken token)
     {
-        //var key = $"{HttpContext.Request.Path.Value}";
-
-        //var response = await _redisProvider.GetAsync<GetMarketGroupsResponse>(key, token);
-
-        //if (response is not null)
-        //    return Ok(response);
-
         var result = await _handler.Send<GetMarketGroupsResponse>(new GetCommonEmptyRequest(), token);
 
         if (result.IsFailure) return StatusCode((int)result.Error.ErrorCode, result.Error);
-
-        //await _redisProvider.SetAsync(key, result.Value, new DistributedCacheEntryOptions
-        //{
-        //    AbsoluteExpiration = DateTime.Today.AddDays(1)
-        //}, token);
 
         return Ok(result.Value);
     }
@@ -52,15 +40,6 @@ public class MarketGroupsController : BaseController
         CancellationToken token)
     {
         var key = $"{HttpContext.Request.Path.Value}";
-
-        //var typesResult = await _redisProvider.GetOrSetAsync(
-        //    key,
-        //    () => _handler.Send<GetChildTypesResponse>(new GetCommonRequestForId(groupId), token),
-        //    new DistributedCacheEntryOptions
-        //    {
-        //        AbsoluteExpiration = DateTime.Today.AddDays(1)
-        //    },
-        //    token);
         var typesResult = await _handler.Send<GetChildTypesResponse>(new GetCommonRequestForId(groupId), token);
 
         if (typesResult.IsFailure) return StatusCode((int)typesResult.Error.ErrorCode, typesResult.Error);
@@ -75,19 +54,6 @@ public class MarketGroupsController : BaseController
         CancellationToken token = default)
     {
         var key = $"{HttpContext.Request.Path.Value}:{regionId}";
-
-        //var result = await _redisProvider.GetOrSetAsync(
-        //    key,
-        //    () => _handler.Send<GetOrdersResponse>(
-        //        new GetOrdersRequest(
-        //            TypeId: typeId,
-        //            RegionId: regionId),
-        //        token),
-        //    new DistributedCacheEntryOptions
-        //    {
-        //        AbsoluteExpiration = DateTime.Now.AddSeconds(4)
-        //    },
-        //    token);
 
         var result = await _handler.Send<GetOrdersResponse>(
                 new GetOrdersRequest(
@@ -108,18 +74,6 @@ public class MarketGroupsController : BaseController
         CancellationToken token = default)
     {
         var key = $"{HttpContext.Request.Path.Value}:{regionId}";
-        //var result = await _redisProvider.GetOrSetAsync(
-        //    key,
-        //    () => _handler.Send<GetMarketHistoryResponse>(
-        //        new GetMarketHistoryRequest(
-        //            RegionId: regionId,
-        //            TypeId: typeId),
-        //        token),
-        //    new DistributedCacheEntryOptions
-        //    {
-        //        AbsoluteExpiration = DateTime.Today.AddDays(1)
-        //    },
-        //    token);
 
         var result = await _handler.Send<GetMarketHistoryResponse>(
                 new GetMarketHistoryRequest(

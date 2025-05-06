@@ -16,9 +16,12 @@ services:
       - ConnectionStrings__Redis=redis:6379,Password=${REDIS_PASSWORD}
       - Admin__Name=${ADMIN_NAME}
       - Admin__Password=${ADMIN_PASSWORD}
+      - Encryption__SecretKey=${CRYPT_KEY}
       - ESI__ClientId=${CLIENT_ID}
       - ESI__ClientSecret=${CLIENT_SECRET}
       - ESI__AdminState=${ADMIN_STATE} 
+      - ESI__UserState=${USER_STATE} 
+      - ESI__RedirectUrl=${REDIRECT_URL} 
     depends_on:
       - eve.db
     volumes:

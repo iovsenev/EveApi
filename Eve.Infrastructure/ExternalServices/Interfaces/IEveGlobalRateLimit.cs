@@ -1,5 +1,4 @@
-﻿
-namespace Eve.Infrastructure.ExternalServices;
+﻿namespace Eve.Infrastructure.ExternalServices.Interfaces;
 
 public interface IEveGlobalRateLimit
 {

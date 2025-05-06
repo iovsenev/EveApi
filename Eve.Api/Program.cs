@@ -2,13 +2,9 @@ using Eve.Infrastructure;
 using Eve.Application;
 using Eve.Api.Minddlewares;
 using Eve.Api;
-using Microsoft.OpenApi.Models;
-using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
-
-
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.ConfigureSwagger();
@@ -40,7 +36,7 @@ builder.Services.AddCors( opt =>
 
 
 builder.Services.AddInfrastructure(configuration);
-builder.Services.AddApplication();
+builder.Services.AddApplication(configuration);
 
 var app = builder.Build();
 

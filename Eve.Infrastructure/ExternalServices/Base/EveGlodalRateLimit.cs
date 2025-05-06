@@ -1,7 +1,8 @@
-﻿using System.Collections.Concurrent;
+﻿using Eve.Infrastructure.ExternalServices.Interfaces;
+using System.Collections.Concurrent;
 using System.Net.WebSockets;
 
-namespace Eve.Infrastructure.ExternalServices
+namespace Eve.Infrastructure.ExternalServices.Base
 {
     public class EveGlobalRateLimit : IEveGlobalRateLimit
     {

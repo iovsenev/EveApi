@@ -1,5 +1,6 @@
 ﻿using Eve.Api.Controllers.Common;
 using Eve.Application.AuthServices.AuthTokenService;
+using Eve.Application.AuthServices.EsiAuth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -10,13 +11,19 @@ public class AuthController : BaseController
 {
     private readonly UserManager<IdentityUser> _userManager;
     private readonly ITokenService _tokenService;
+    private readonly EsiAuthentication _esiAuthentication;
+    private readonly IConfiguration _config;
 
     public AuthController(
-        UserManager<IdentityUser> userManager, 
-        ITokenService tokenService)
+        UserManager<IdentityUser> userManager,
+        ITokenService tokenService,
+        EsiAuthentication esiAuthentication,
+        IConfiguration config)
     {
         _userManager = userManager;
         _tokenService = tokenService;
+        _esiAuthentication = esiAuthentication;
+        _config = config;
     }
 
     [HttpPost("login")]
@@ -38,7 +45,7 @@ public class AuthController : BaseController
             HttpOnly = true,
             Secure = false,
             SameSite = SameSiteMode.Unspecified,
-            Expires = DateTime.UtcNow.AddDays(7)
+            Expires = DateTime.UtcNow.AddDays(1)
         };
 
         Response.Cookies.Append("AuthToken", jwtToken, cookieOptions);
@@ -55,16 +62,36 @@ public class AuthController : BaseController
         Response.Cookies.Delete("AuthToken");
         return Ok(new { message = "Successfully logged out" });
     }
+
+    [HttpGet("/callback")]
+    [ApiExplorerSettings(IgnoreApi = true)]
+    public async Task<IActionResult> Callback([FromQuery] string code, [FromQuery] string state, CancellationToken token)
+    {
+        var result = await _esiAuthentication.GetAccessTokenAsync(new RequestData(code, state), token);
+
+        if (result.IsFailure)
+            return StatusCode((int)result.Error.ErrorCode, result.Error.Message);
+
+
+        return Redirect(result.Value);
+    }
+
+    [HttpGet("esi/login")]
+    public async Task<IActionResult> AuthorizeBot(string returnUrl)
+    {
+        var state = _config["ESI:UserState"];
+        var result = _esiAuthentication.GetAuthUrl(returnUrl, state);
+
+        if (result.IsFailure)
+            return StatusCode((int)result.Error.ErrorCode, result.Error.Message);
+
+
+        return Redirect(result.Value);
+    }
 }
 
 public class LoginRequest
 {
     public string UserName { get; set; }
     public string Password { get; set; }    
-}
-
-public class LoginResponse
-{
-    public string Token { get; set; }
-    public DateTime ExpiresAt { get; set; }
 }

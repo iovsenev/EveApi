@@ -13,13 +13,13 @@ public class LoadOrdersService : ILoadOrdersService
 {
     private readonly ILogger<LoadOrdersService> _logger;
     private readonly IReadRegionRepository _regionRepository;
-    private readonly IEveApiOpenClientProvider _httpClient;
+    private readonly IEveApiMarketProvider _httpClient;
     private readonly IRedisProvider _redisProvider;
 
     public LoadOrdersService(
         ILogger<LoadOrdersService> logger,
         IReadRegionRepository regionRepository,
-        IEveApiOpenClientProvider httpClient,
+        IEveApiMarketProvider httpClient,
         IRedisProvider redisProvider)
     {
         _logger = logger;
@@ -119,7 +119,7 @@ public class LoadOrdersService : ILoadOrdersService
             var stopWatch = new Stopwatch();
             stopWatch.Start();
 
-            var result = await _httpClient.FetchAllOrdersAsync(regionId, token);
+            var result = await _httpClient.GetOrdersForRegionAsync(regionId, token);
 
             if (result.IsFailure)
                 return result.Error.ErrorCode == ErrorCodes.NotModified 

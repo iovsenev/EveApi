@@ -9,7 +9,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
-namespace Eve.Application.InternalServices.TokenService;
+namespace Eve.Application.AuthServices.EsiAuth;
 public class EveSsoJwtValidator
 {
     private readonly IRedisProvider _redisProvider;
@@ -25,12 +25,31 @@ public class EveSsoJwtValidator
         _apiClient = apiClient;
         _config = config;
     }
+    public async Task<bool> IsTokenValidAsync(string jwtToken, CancellationToken token)
+    {
+        var clientId = _config["ESI:ClientId"];
+        try
+        {
+            var principal = await ValidateJwtTokenAsync(jwtToken, token);
+            if (principal.IsFailure)
+            {
+                return false;
+            }
+
+            var audienceClaim = principal.Value.FindFirst("aud")?.Value;
+            return audienceClaim != null && audienceClaim.Split(' ').Contains(clientId);
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
     private async Task<Result<JwksMetadata>> FetchJwksMetadataAsync(CancellationToken token)
     {
         var key = GlobalKeysCacheConstants.JwksMetadata;
 
-        var metadata = await _redisProvider.GetOrSetAsync<JwksMetadata>(key,
+        var metadata = await _redisProvider.GetOrSetAsync(key,
             () => _apiClient.FetchJwksMetadataAsync(token),
             new DistributedCacheEntryOptions
             {
@@ -41,11 +60,9 @@ public class EveSsoJwtValidator
         if (metadata.IsSuccess)
             return metadata.Value;
         return metadata.Error;
-
-
     }
 
-    public async Task<Result<ClaimsPrincipal>> ValidateJwtTokenAsync(string JwtToken, CancellationToken token)
+    private async Task<Result<ClaimsPrincipal>> ValidateJwtTokenAsync(string JwtToken, CancellationToken token)
     {
         var jwksMetadataResult = await FetchJwksMetadataAsync(token);
 
@@ -54,7 +71,6 @@ public class EveSsoJwtValidator
 
         var jwksMetadata = jwksMetadataResult.Value;
 
-        // Получаем ключи из JWKS
         var keys = jwksMetadata.Keys
             .Select(k => new JsonWebKey
             {
@@ -80,6 +96,7 @@ public class EveSsoJwtValidator
         };
 
         var tokenHandler = new JwtSecurityTokenHandler();
+
         try
         {
             var principal = tokenHandler.ValidateToken(JwtToken, validationParameters, out _);
@@ -91,23 +108,4 @@ public class EveSsoJwtValidator
         }
     }
 
-    public async Task<bool> IsTokenValidAsync(string jwtToken, CancellationToken token)
-    {
-        var clientId = _config["ESI:ClientId"];
-        try
-        {
-            var principal = await ValidateJwtTokenAsync(jwtToken, token);
-            if (principal.IsFailure)
-            {
-                return false;
-            }
-
-            var audienceClaim = principal.Value.FindFirst("aud")?.Value;
-            return audienceClaim != null && audienceClaim.Split(' ').Contains(clientId);
-        }
-        catch
-        {
-            return false;
-        }
-    }
 }

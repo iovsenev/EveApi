@@ -3,6 +3,7 @@ using Eve.Domain.Constants;
 using Eve.Domain.ExternalTypes;
 using Eve.Domain.Interfaces.CacheProviders;
 using Eve.Domain.Interfaces.ExternalServices;
+using Eve.Infrastructure.ExternalServices.Interfaces;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
